@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>热文创作台 · 真实热榜爆文仿写平台</title>
+<style>
+:root{
+  --blue:#1d4ed8; --blue-hover:#1e40af; --blue-50:#eff6ff; --blue-100:#dbeafe;
+  --ink:#111827; --ink-2:#4b5563; --ink-3:#9ca3af;
+  --bg:#ffffff; --bg-2:#f9fafb; --line:#e5e7eb; --line-2:#d1d5db;
+  --red:#dc2626; --red-50:#fef2f2; --green:#059669; --green-50:#ecfdf5;
+  --amber:#d97706; --amber-50:#fffbeb;
+  --r:8px; --r-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg-2); color:var(--ink); font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:inherit}
+
+/* ── 顶栏 ── */
+header{
+  background:var(--bg); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:50;
+}
+.hd{max-width:1240px;margin:0 auto;padding:0 24px;height:60px;
+  display:flex;align-items:center;gap:28px}
+.logo{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:600;letter-spacing:-.2px}
+.logo-mk{width:24px;height:24px;background:var(--blue);border-radius:6px;
+  display:grid;place-items:center;color:#fff;font-size:13px;font-weight:600}
+nav{display:flex;gap:2px}
+nav button{
+  padding:7px 14px;border-radius:var(--r);color:var(--ink-2);font-size:14px;
+  font-weight:500;transition:.14s;
+}
+nav button:hover{background:var(--bg-2);color:var(--ink)}
+nav button.on{background:var(--blue-50);color:var(--blue)}
+.hd-r{margin-left:auto;display:flex;align-items:center;gap:12px}
+.src{font-size:12px;color:var(--ink-3)}
+.src b{color:var(--ink-2);font-weight:500}
+
+/* ── 容器 ── */
+.wrap{max-width:1240px;margin:0 auto;padding:28px 24px 80px}
+.page{display:none}
+.page.on{display:block}
+
+/* ── 筛选条 ── */
+.filters{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:14px 18px;margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.fl{font-size:13px;color:var(--ink-3);font-weight:500;margin-right:2px}
+.chip{
+  padding:5px 13px;border:1px solid var(--line-2);border-radius:20px;
+  font-size:13px;color:var(--ink-2);background:var(--bg);transition:.14s;font-weight:500;
+}
+.chip:hover{border-color:var(--blue);color:var(--blue)}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.realfirst{border-color:var(--green);color:var(--green)}
+.chip.realfirst.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ── 数据条 ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px}
+.stat .k{font-size:12px;color:var(--ink-3);margin-bottom:5px}
+.stat .v{font-size:24px;font-weight:600;letter-spacing:-.5px}
+.stat .v small{font-size:13px;font-weight:500;color:var(--ink-3);margin-left:2px}
+
+/* ── 列表 ── */
+.lst{display:flex;flex-direction:column;gap:10px}
+.card{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:16px 18px;display:flex;gap:16px;cursor:pointer;transition:.16s;
+}
+.card:hover{border-color:var(--line-2);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.rk{
+  width:26px;flex-shrink:0;text-align:center;font-size:15px;font-weight:600;
+  color:var(--ink-3);padding-top:2px;font-variant-numeric:tabular-nums;
+}
+.card:nth-child(1) .rk{color:#dc2626}
+.card:nth-child(2) .rk{color:#ea580c}
+.card:nth-child(3) .rk{color:#ca8a04}
+.cv{width:96px;height:68px;flex-shrink:0;border-radius:var(--r);
+  object-fit:cover;background:var(--bg-2);border:1px solid var(--line)}
+.cvw{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-weight:600;color:#fff;font-size:26px;user-select:none}
+.cvw img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bd{flex:1 1 auto;min-width:0}
+.tt{font-size:15px;font-weight:600;line-height:1.45;margin-bottom:7px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--ink-3)}
+.tag{padding:2px 8px;border-radius:4px;background:var(--bg-2);white-space:nowrap;
+  border:1px solid var(--line);font-size:12px;color:var(--ink-2);font-weight:500}
+.tag.wx{background:var(--green-50);border-color:#a7f3d0;color:#047857}
+.tag.rd{background:var(--red-50);border-color:#fecaca;color:#b91c1c}
+.rd-n{color:var(--red);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.aim{margin-left:auto;font-size:12px;color:var(--ink-3);display:flex;
+  align-items:center;gap:5px;flex-shrink:0;white-space:nowrap}
+.aim svg{opacity:.5;flex-shrink:0}
+
+/* ── 详情抽屉 ── */
+.ov{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:100;
+  display:none;backdrop-filter:blur(2px)}
+.ov.on{display:block}
+.dw{
+  position:fixed;top:0;right:0;bottom:0;width:min(920px,94vw);background:var(--bg);
+  z-index:101;display:none;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.1);
+}
+.dw.on{display:flex}
+.dw-h{padding:18px 24px;border-bottom:1px solid var(--line);
+  display:flex;align-items:flex-start;gap:16px;flex-shrink:0}
+.dw-h h2{font-size:17px;font-weight:600;line-height:1.45;flex:1;min-width:0;letter-spacing:-.2px}
+.x{width:30px;height:30px;border-radius:var(--r);color:var(--ink-3);flex-shrink:0;
+  display:grid;place-items:center;font-size:18px}
+.x:hover{background:var(--bg-2);color:var(--ink)}
+.dw-b{flex:1;overflow-y:auto;padding:24px}
+.meta-bar{display:flex;gap:20px;padding:14px 18px;background:var(--bg-2);
+  border-radius:var(--r-lg);margin-bottom:22px;flex-wrap:wrap}
+.mb-k{font-size:11px;color:var(--ink-3);margin-bottom:3px}
+.mb-v{font-size:15px;font-weight:600}
+.mb-v.red{color:var(--red)}
+
+/* ── 标签页 ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.tabs button{padding:10px 16px;font-size:14px;font-weight:500;color:var(--ink-3);
+  border-bottom:2px solid transparent;margin-bottom:-1px;transition:.14s}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--blue);border-bottom-color:var(--blue)}
+.tp{display:none}.tp.on{display:block}
+
+.src-note{background:var(--blue-50);border:1px solid var(--blue-100);
+  border-radius:var(--r-lg);padding:14px 16px;margin-bottom:20px;
+  font-size:13px;color:var(--blue-hover);line-height:1.7}
+.src-note b{font-weight:600}
+
+/* ── 表单 ── */
+.fld{margin-bottom:16px}
+.fld label{display:block;font-size:13px;font-weight:500;margin-bottom:7px;color:var(--ink-2)}
+.fld input,.fld textarea,.fld select{
+  width:100%;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r);
+  font-family:inherit;font-size:14px;color:var(--ink);background:var(--bg);transition:.14s;
+}
+.fld input:focus,.fld textarea:focus,.fld select:focus{
+  outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-50)}
+.fld textarea{resize:vertical;min-height:84px;line-height:1.7}
+.fld .hint{font-size:12px;color:var(--ink-3);margin-top:5px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.btn{
+  padding:10px 20px;border-radius:var(--r);font-size:14px;font-weight:500;
+  transition:.14s;display:inline-flex;align-items:center;gap:7px;
+}
+.btn-p{background:var(--blue);color:#fff}
+.btn-p:hover{background:var(--blue-hover)}
+.btn-p:disabled{background:var(--line-2);cursor:not-allowed}
+.btn-g{background:var(--bg);color:var(--ink-2);border:1px solid var(--line-2)}
+.btn-g:hover{border-color:var(--ink-3);color:var(--ink)}
+.btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+
+/* ── 输出区 ── */
+.out{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:20px;min-height:220px;font-size:14.5px;line-height:1.85;
+  white-space:pre-wrap;word-break:break-word;
+}
+.out.empty{color:var(--ink-3);display:grid;place-items:center;font-size:14px}
+.out-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.out-t{font-size:14px;font-weight:600}
+.cnts{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* ── 图片 ── */
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:6px}
+.imgbox{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--bg)}
+.imgbox img{width:100%;height:140px;object-fit:cover;display:block;background:var(--bg-2)}
+.imgbox .cap{padding:8px 10px;font-size:12px;color:var(--ink-3);line-height:1.5}
+
+/* ── 检测 ── */
+.dres{display:flex;gap:14px;align-items:center;padding:18px;
+  border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:16px}
+.gauge{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;
+  flex-shrink:0;font-size:22px;font-weight:600;letter-spacing:-.5px}
+.gauge.lo{background:var(--green-50);color:var(--green)}
+.gauge.mi{background:var(--amber-50);color:var(--amber)}
+.gauge.hi{background:var(--red-50);color:var(--red)}
+.dinfo{flex:1}
+.dinfo .t{font-size:15px;font-weight:600;margin-bottom:4px}
+.dinfo .s{font-size:13px;color:var(--ink-2);line-height:1.65}
+.seg{display:flex;flex-direction:column;gap:7px}
+.seg-i{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;
+  border-radius:var(--r);border:1px solid var(--line);font-size:13.5px;line-height:1.7}
+.seg-i.ai{background:var(--red-50);border-color:#fecaca}
+.seg-i.hu{background:var(--green-50);border-color:#a7f3d0}
+.seg-p{font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;
+  flex-shrink:0;margin-top:2px;white-space:nowrap}
+.seg-p.ai{background:#fee2e2;color:#b91c1c}
+.seg-p.hu{background:#d1fae5;color:#047857}
+.seg-t{flex:1;color:var(--ink-2)}
+
+.note{background:var(--amber-50);border:1px solid #fde68a;border-radius:var(--r-lg);
+  padding:13px 16px;font-size:13px;color:#92400e;line-height:1.7;margin-bottom:16px}
+.note b{font-weight:600}
+.note.info{background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-hover)}
+
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty-tip{padding:56px 20px;text-align:center;color:var(--ink-3)}
+.empty-tip .t{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--ink-2)}
+.empty-tip .s{font-size:13px;line-height:1.7;max-width:400px;margin:0 auto}
+
+@media(max-width:820px){
+  .hd{padding:0 16px;gap:14px;height:auto;min-height:56px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+  .wrap{padding:18px 16px 60px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .row{grid-template-columns:1fr}
+  /* 卡片：允许换行，.aim 独占一行，不再挤压标题 */
+  .card{padding:14px;gap:12px;flex-wrap:wrap}
+  .cv{width:72px;height:52px}
+  .bd{flex:1 1 calc(100% - 26px - 72px - 12px)}
+  .aim{margin-left:0;width:100%;order:3;padding-top:2px}
+}
+@media(max-width:560px){
+  nav{display:flex;order:3;width:100%;margin-top:2px}
+  nav button{flex:1;text-align:center;padding:8px 6px}
+  .hd-r{width:100%;order:2}
+  .src{font-size:11px}
+  .card{padding:12px;gap:10px}
+  .cv{width:56px;height:42px}
+  .bd{flex:1 1 calc(100% - 26px - 56px - 10px)}
+  .tt{font-size:14px}
+  /* 抽屉在窄屏全屏铺满 */
+  .dw{width:100vw}
+  .dw-h{padding:14px 16px;gap:10px}
+  .dw-h h2{font-size:15px}
+  .dw-b{padding:16px}
+  .meta-bar{gap:12px;padding:12px 14px}
+  .tabs{flex-wrap:wrap}
+  .tabs button{padding:9px 11px;font-size:13px}
+  .dres{flex-direction:column;text-align:center;gap:10px}
+  .dinfo{text-align:left}
+  .imgs{grid-template-columns:1fr 1fr}
+}
+
+/* ═══ 排版弹窗 ═══ */
+.mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;
+  align-items:center;justify-content:center;z-index:200;padding:24px}
+.mask.hide{display:none}
+.modal{background:#fff;border-radius:12px;width:min(820px,100%);max-height:88vh;
+  display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(15,23,42,.25);overflow:hidden}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;gap:12px}
+.modal-h h3{font-size:15px;font-weight:600}
+.modal-h .x{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:20px;
+  line-height:1;padding:4px 8px;border-radius:6px}
+.modal-h .x:hover{background:var(--bg-2)}
+.modal-b{padding:0;overflow:auto;background:var(--bg-1)}
+.ts-bar{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;
+  gap:10px;flex-wrap:wrap;align-items:center;background:#fff}
+.ts-bar .sp{color:var(--ink-3);font-size:12px;margin-left:auto}
+.ts-prev{padding:24px 28px;background:#fff;min-height:240px}
+.ts-prev:empty::before{content:"点击左侧按钮生成排版预览";color:var(--ink-3);font-size:13px}
+/* 公众号商务蓝主题（也会被注入到复制的 HTML 中） */
+.wx-theme{font-size:16px;color:#2b2b2b;line-height:1.85;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  word-break:break-word}
+.wx-theme h1{font-size:22px;font-weight:700;color:#1d4ed8;margin:26px 0 14px;line-height:1.4}
+.wx-theme h2{font-size:19px;font-weight:700;color:#1d4ed8;margin:24px 0 12px;
+  padding-left:12px;border-left:4px solid #1d4ed8;line-height:1.4}
+.wx-theme h3{font-size:17px;font-weight:600;color:#0f172a;margin:20px 0 10px}
+.wx-theme p{margin:14px 0;text-align:justify}
+.wx-theme strong{color:#1d4ed8;font-weight:600}
+.wx-theme em{font-style:normal;color:#b91c1c;font-weight:600}
+.wx-theme blockquote{margin:16px 0;padding:12px 16px;background:#f1f5ff;
+  border-left:4px solid #1d4ed8;border-radius:0 6px 6px 0;color:#334155}
+.wx-theme ul,.wx-theme ol{padding-left:22px;margin:14px 0}
+.wx-theme li{margin:8px 0}
+.wx-theme img{max-width:100%;border-radius:8px;margin:14px 0}
+.wx-theme a{color:#1d4ed8}
+.wx-theme hr{border:none;border-top:1px solid #e2e8f0;margin:20px 0}
+.wx-theme pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;
+  overflow:auto;font-size:14px;line-height:1.6}
+.wx-theme code{background:#eef2ff;color:#4338ca;padding:2px 6px;border-radius:4px;
+  font-size:14px}
+.wx-theme pre code{background:transparent;color:inherit;padding:0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div class="logo"><div class="logo-mk">热</div>热文创作台</div>
+    <nav>
+      <button class="on" data-pg="board">热榜</button>
+      <button data-pg="mine">我的作品</button>
+    </nav>
+    <div class="hd-r">
+      <span class="src" id="srcInfo">数据源 —</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ═══ 热榜页 ═══ -->
+  <div class="page on" id="pg-board">
+    <div class="src-note">
+      全部文章<b>真实抓取</b>自公开热榜，微信板块带<b>真实阅读量</b>（精确到个位），数据每日自动更新。点击任意文章即可进入 AI 仿写工作台。
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">收录文章</div><div class="v" id="sTotal">—</div></div>
+      <div class="stat"><div class="k">真实阅读量</div><div class="v" id="sReal">—</div></div>
+      <div class="stat"><div class="k">最高阅读</div><div class="v" id="sMax">—</div></div>
+      <div class="stat"><div class="k">覆盖平台</div><div class="v" id="sPlat">—</div></div>
+    </div>
+
+    <div class="filters">
+      <span class="fl">平台</span>
+      <div id="fPlat" style="display:contents"></div>
+    </div>
+    <div class="filters">
+      <span class="fl">分类</span>
+      <div id="fCat" style="display:contents"></div>
+      <button class="chip realfirst" id="fReal" style="margin-left:auto">只看真实阅读量</button>
+    </div>
+
+    <div class="lst" id="list"></div>
+  </div>
+
+  <!-- ═══ 我的作品 ═══ -->
+  <div class="page" id="pg-mine">
+    <div class="lst" id="myList"></div>
+  </div>
+
+</div>
+
+<!-- ═══ 详情抽屉 ═══ -->
+<div class="ov" id="ov"></div>
+<div class="dw" id="dw">
+  <div class="dw-h">
+    <h2 id="dTitle">—</h2>
+    <button class="x" id="dClose">×</button>
+  </div>
+  <div class="dw-b">
+    <div class="meta-bar" id="dMeta"></div>
+
+    <div class="tabs">
+      <button class="on" data-tp="rw">AI 仿写</button>
+      <button data-tp="img">配图生成</button>
+      <button data-tp="det">AIGC 检测</button>
+      <button data-tp="src">原文</button>
+    </div>
+
+    <!-- 仿写 -->
+    <div class="tp on" id="tp-rw">
+      <div class="fld">
+        <label>仿写风格</label>
+        <select id="rwStyle">
+          <option value="same">贴近原文（同题材换角度重写）</option>
+          <option value="opposite">反角度对立观点</option>
+          <option value="deeper">深度挖掘补充</option>
+          <option value="story">故事化叙事</option>
+          <option value="list">干货清单体</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="fld">
+          <label>目标字数</label>
+          <select id="rwLen">
+            <option value="800">800 字</option>
+            <option value="1200" selected>1200 字</option>
+            <option value="1800">1800 字</option>
+            <option value="2500">2500 字</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>去 AI 味强度</label>
+          <select id="rwHuman">
+            <option value="mid" selected>中（自然口语）</option>
+            <option value="strong">强（重度口语化）</option>
+            <option value="light">轻（仅微调）</option>
+          </select>
+        </div>
+      </div>
+      <div class="fld">
+        <label>额外要求（可选）</label>
+        <textarea id="rwExtra" placeholder="例如：结尾加一句引导关注的话 / 加入具体数字 / 换个城市做例子"></textarea>
+      </div>
+      <div class="btns" style="margin-bottom:18px">
+        <button class="btn btn-p" id="btnRw">开始仿写</button>
+        <button class="btn btn-g" id="btnRwRe">换一版</button>
+        <button class="btn btn-g" id="btnSave">存入我的作品</button>
+        <button class="btn btn-g" id="btnHumanize">去味润色</button>
+        <button class="btn btn-g" id="btnTypeset">排版预览</button>
+      </div>
+      <div class="out-h">
+        <span class="out-t">仿写结果</span>
+        <span class="cnts" id="rwCnt">0 字</span>
+      </div>
+      <div class="out empty" id="rwOut">点「开始仿写」，AI 会读取原文重新写一篇</div>
+    </div>
+
+    <!-- 配图 -->
+    <div class="tp" id="tp-img">
+      <div class="fld">
+        <label>图片提示词</label>
+        <textarea id="imPrompt" placeholder="描述你想要的画面，中英文皆可"></textarea>
+        <div class="hint">留空则由 AI 根据原文主题自动生成提示词</div>
+      </div>
+      <div class="row">
+        <div class="fld">
+          <label>画面比例</label>
+          <select id="imRatio">
+            <option value="16:9" selected>16:9 横图（正文插图）</option>
+            <option value="2.35:1">2.35:1 超宽（封面）</option>
+            <option value="1:1">1:1 方图</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label>风格</label>
+          <select id="imStyle">
+            <option value="real" selected>写实摄影</option>
+            <option value="illu">扁平插画</option>
+            <option value="anime">日系动漫</option>
+            <option value="3d">3D 渲染</option>
+            <option value="ink">水墨国风</option>
+          </select>
+        </div>
+      </div>
+      <div class="btns" style="margin-bottom:18px">
+        <button class="btn btn-p" id="btnIm">生成图片</button>
+        <button class="btn btn-g" id="btnImAuto">自动写提示词</button>
+      </div>
+      <div class="imgs" id="imOut"></div>
+    </div>
+
+    <!-- 检测 -->
+    <div class="tp" id="tp-det">
+      <div class="note">
+        <b>检测说明：</b>本平台接入腾讯朱雀 AIGC 检测（开源 CLI，本地/服务器运行），按段落给出 AI 生成概率。
+        单 IP 限流较严（约 36 次/小时），自用和小团队够用。需要更高并发要配代理池。
+      </div>
+      <div class="fld">
+        <label>待检测文本</label>
+        <select id="detSrc">
+          <option value="rw" selected>当前仿写稿</option>
+          <option value="custom">手动粘贴</option>
+        </select>
+      </div>
+      <div class="fld" id="detCustomWrap" style="display:none">
+        <textarea id="detCustom" style="min-height:200px" placeholder="粘贴要检测的文本（不少于 200 字）"></textarea>
+      </div>
+      <div class="btns" style="margin-bottom:18px">
+        <button class="btn btn-p" id="btnDet">开始检测</button>
+      </div>
+      <div id="detOut"></div>
+    </div>
+
+    <!-- 原文 -->
+    <div class="tp" id="tp-src">
+      <div class="out-h">
+        <span class="out-t">原文链接</span>
+        <span class="cnts" id="srcMeta">—</span>
+      </div>
+      <div class="out" id="srcUrl" style="min-height:auto;word-break:break-all">—</div>
+      <a id="repUrl" style="display:none;margin-top:9px;color:#1d4ed8;font-size:13px;text-decoration:none;font-weight:500" target="_blank" rel="noopener">↗ 看网上可打开的转载原文（已验证真实）</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="vendor/marked.umd.js"></script>
+<script>
+/* ═══════════ 配置 ═══════════ */
+const CFG = {
+  api: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/agnes-proxy/v1/chat/completions",
+  model: "agnes-2.0-flash",
+  demo: "demo",
+};
+const DEMO_IMAGE = "data:image/svg+xml;utf8,";
+
+let DATA = { articles: [], updatedAt: "", source: "" };
+let FILT = { plat: "全部", cat: "全部", real: false };
+let CUR = null;
+let RWTEXT = "";
+let MYLIST = [];
+
+/* ═══════════ 工具 ═══════════ */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s || "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function fmtReads(n) {
+  if (!n) return "—";
+  if (n >= 10000) return (n / 10000).toFixed(1).replace(/\.0$/, "") + "万";
+  return n.toLocaleString();
+}
+
+/* ═══════════ 加载数据 ═══════════ */
+async function loadData() {
+  try {
+    const r = await fetch("data/articles.json?v=" + Date.now());
+    DATA = await r.json();
+  } catch (e) {
+    $("#list").innerHTML = `<div class="empty-tip"><div class="t">数据加载失败</div><div class="s">请确认 data/articles.json 存在（运行 python fetch_hot.py 生成）</div></div>`;
+    return;
+  }
+  renderStats();
+  renderFilters();
+  renderList();
+  $("#srcInfo").innerHTML = `更新 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+}
+
+function renderStats() {
+  const a = DATA.articles || [];
+  const real = a.filter(x => x.hasRealRead);
+  const max = real.length ? Math.max(...real.map(x => x.readCount)) : 0;
+  const plats = new Set(a.map(x => x.platform));
+  $("#sTotal").innerHTML = a.length + "<small>篇</small>";
+  $("#sReal").innerHTML = real.length + "<small>篇</small>";
+  $("#sMax").innerHTML = fmtReads(max);
+  $("#sPlat").innerHTML = plats.size + "<small>个</small>";
+}
+
+function renderFilters() {
+  const a = DATA.articles || [];
+  const plats = [...new Set(a.map(x => x.platform))];
+  const cats = [...new Set(a.map(x => x.category))];
+
+  $("#fPlat").innerHTML = ["全部", ...plats].map(p =>
+    `<button class="chip ${p === FILT.plat ? "on" : ""}" data-p="${esc(p)}">${esc(p)}</button>`).join("");
+  $("#fCat").innerHTML = ["全部", ...cats].map(c =>
+    `<button class="chip ${c === FILT.cat ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+
+  $$("#fPlat .chip").forEach(b => b.onclick = () => { FILT.plat = b.dataset.p; renderFilters(); renderList(); });
+  $$("#fCat .chip").forEach(b => b.onclick = () => { FILT.cat = b.dataset.c; renderFilters(); renderList(); });
+  $("#fReal").onclick = () => { FILT.real = !FILT.real; renderFilters(); renderList(); };
+  $("#fReal").classList.toggle("on", FILT.real);
+}
+
+function filtered() {
+  return (DATA.articles || []).filter(a => {
+    if (FILT.plat !== "全部" && a.platform !== FILT.plat) return false;
+    if (FILT.cat !== "全部" && a.category !== FILT.cat) return false;
+    if (FILT.real && !a.hasRealRead) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const arr = filtered();
+  if (!arr.length) {
+    $("#list").innerHTML = `<div class="empty-tip"><div class="t">没有符合条件的文章</div><div class="s">换个筛选条件试试</div></div>`;
+    return;
+  }
+  $("#list").innerHTML = arr.map((a, i) => `
+    <div class="card" data-id="${a.id}">
+      <div class="rk">${i + 1}</div>
+      ${(() => {
+        const phCols = ["#1d4ed8", "#0f766e", "#7c3aed", "#b45309", "#be185d", "#4d7c0f"];
+        let h = 0; for (const ch of a.title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+        const phc = phCols[h % phCols.length];
+        const ch = (a.title.trim()[0] || "文");
+        return `<div class="cv cvw" style="background:${phc}">${esc(ch)}${a.cover ? `<img src="${esc(a.cover)}" referrerpolicy="no-referrer" onerror="this.remove()" alt="">` : ""}</div>`;
+      })()}
+      <div class="bd">
+        <div class="tt">${esc(a.title)}</div>
+        <div class="mt">
+          <span class="tag ${a.platform === "微信" ? "wx" : ""}">${esc(a.platform)}</span>
+          <span class="tag">${esc(a.category)}</span>
+          ${a.hasRealRead ? `<span class="rd-n">${esc(a.readCountText)} 阅读</span>`
+                          : `<span>${esc(a.readCountText || "—")}</span>`}
+        </div>
+      </div>
+      <div class="aim">AI 仿写
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+          <path d="M9 18l6-6-6-6"/></svg>
+      </div>
+    </div>`).join("");
+
+  $$("#list .card").forEach(c => c.onclick = () => {
+    openDrawer((DATA.articles || []).find(x => x.id === c.dataset.id));
+  });
+}
+
+/* ═══════════ 我的作品 ═══════════ */
+function renderMy() {
+  if (!MYLIST.length) {
+    $("#myList").innerHTML = `<div class="empty-tip"><div class="t">还没有作品</div>
+      <div class="s">在热榜里挑一篇文章，点「开始仿写」，写好点「存入我的作品」就会出现在这里（保存在本机浏览器）</div></div>`;
+    return;
+  }
+  $("#myList").innerHTML = MYLIST.map((w, i) => `
+    <div class="card" style="cursor:default">
+      <div class="rk">${i + 1}</div>
+      <div class="bd">
+        <div class="tt">${esc(w.title)}</div>
+        <div class="mt">
+          <span class="tag">${w.words} 字</span>
+          <span class="tag">${esc(w.from || "原创")}</span>
+          <span>${esc(w.time)}</span>
+        </div>
+        <div style="margin-top:10px;font-size:13px;color:var(--ink-2);line-height:1.7;
+          display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+          ${esc(w.text.slice(0, 150))}…</div>
+      </div>
+      <div class="aim">
+        <button class="btn btn-g" data-del="${i}" style="padding:6px 12px;font-size:13px">删除</button>
+      </div>
+    </div>`).join("");
+  $$("#myList [data-del]").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    MYLIST.splice(+b.dataset.del, 1);
+    localStorage.setItem("wxhot_mine", JSON.stringify(MYLIST));
+    renderMy();
+  });
+}
+try { MYLIST = JSON.parse(localStorage.getItem("wxhot_mine") || "[]"); } catch (e) { MYLIST = []; }
+
+/* ═══════════ 抽屉 ═══════════ */
+function openDrawer(a) {
+  if (!a) return;
+  CUR = a;
+  $("#dTitle").textContent = a.title;
+  $("#dMeta").innerHTML = `
+    <div><div class="mb-k">平台</div><div class="mb-v">${esc(a.platform)}</div></div>
+    <div><div class="mb-k">分类</div><div class="mb-v">${esc(a.category)}</div></div>
+    <div><div class="mb-k">${a.hasRealRead ? "真实阅读量" : "榜单热度"}</div>
+      <div class="mb-v ${a.hasRealRead ? "red" : ""}">${esc(a.readCountText)}</div></div>
+    <div><div class="mb-k">榜单</div><div class="mb-v" style="font-size:13px">${esc(a.board)}</div></div>`;
+  $("#srcUrl").textContent = a.url;
+  $("#srcMeta").textContent = a.url.length + " 字符";
+  const rep = $("#repUrl");
+  if (a.reprint) { rep.href = a.reprint; rep.style.display = "inline-block"; }
+  else { rep.style.display = "none"; }
+  $("#imPrompt").value = "";
+  $("#detOut").innerHTML = "";
+  $("#ov").classList.add("on");
+  $("#dw").classList.add("on");
+}
+function closeDrawer() {
+  $("#ov").classList.remove("on");
+  $("#dw").classList.remove("on");
+  CUR = null;
+}
+$("#dClose").onclick = closeDrawer;
+$("#ov").onclick = closeDrawer;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+
+$$(".tabs button").forEach(b => b.onclick = () => {
+  $$(".tabs button").forEach(x => x.classList.remove("on"));
+  $$(".tp").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  $("#tp-" + b.dataset.tp).classList.add("on");
+});
+$("#detSrc").onchange = e => {
+  $("#detCustomWrap").style.display = e.target.value === "custom" ? "" : "none";
+};
+
+/* ═══════════ AI 调用 ═══════════ */
+async function ai(prompt, maxTok = 2400) {
+  const r = await fetch(CFG.api, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: CFG.model,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: maxTok,
+      temperature: 0.85,
+    }),
+  });
+  if (!r.ok) throw new Error("接口 " + r.status);
+  const j = await r.json();
+  return (j.choices && j.choices[0].message.content || "").trim();
+}
+
+/* ═══════════ 仿写 ═══════════ */
+const STYLE_MAP = {
+  same: "贴近原文的题材和视角，但换一套全新的切入角度和事例重写",
+  opposite: "站在与原文相反的立场，用对立观点重新论证同一话题，制造认知冲突",
+  deeper: "在原文基础上向深一层挖掘：补充原文没讲透的因果、行业背景或反面案例",
+  story: "用讲故事的方式重写：开头用一个具体场景或人物切入，中间铺开，结尾有转折",
+  list: "用干货清单体重写：短句、分点、加粗要点，去掉所有冗余修饰",
+};
+const HUMAN_MAP = {
+  strong: "重度口语化：多用短句和语气词，允许有口头禅和不完整的句子，像真人随手写",
+  mid: "自然口语：句子长短交替，不要每段都对称，不要总结式收尾",
+  light: "仅轻微调整语序，保持原文的书面感",
+};
+
+/* Humanizer-zh 去 AI 味规则（按强度切换，融入仿写 prompt） */
+const HUMANIZER = {
+  light: `【去 AI 味·轻度】
+- 避免"随着…的发展""众所周知""近年来"这类空泛开头
+- 少用"值得注意的是""不难发现""总而言之"等套话收尾`,
+  mid: `【去 AI 味·中度】
+- 开头禁用空泛铺垫："随着…的发展""众所周知""近年来""在这个…时代"
+- 禁用假对比句式："这不仅是…更是…""不只是…而是…"
+- 禁用套话收尾："总而言之""让我们拭目以待""期待更多可能""彰显了…的追求"
+- 句式长短交错，不要整齐排比；不要每段都对称、都升华
+- 少堆 AI 高频词：赋能、至关重要、深入探讨、无缝、闭环、打造、一站式
+- 允许口语、短句、语气词；允许不完整的句子`,
+  strong: `【去 AI 味·重度（参照 Humanizer-zh 31 条规则）】
+- 开头禁用空泛铺垫："随着…的发展""众所周知""近年来""在这个…时代""让我们深入看看""以下是你需要知道的"
+- 禁用假对比："这不仅是 A，更是 B""不只是…而是…"（除非两部分都提供独立信息）
+- 禁用套话收尾与伪深度："总而言之""让我们拭目以待""期待更多可能""彰显了…的追求""标志着…新时代""堪称…天堂"
+- 禁止强凑三段式排比（"创新、突破、全新可能"这类无独立信息的并列要合并）
+- 禁止客服腔："好问题！""希望这对您有帮助！"；禁止生造复合词与滥用破折号制造悬念
+- 禁止宣传语式拔高：删掉没有独立内容的赞美，保留真实特征与参数
+- 句式长短严格交错；同一主语不要连续复读；连接词只在有实际作用时保留
+- AI 高频词禁用：赋能、至关重要、深入探讨、无缝、闭环、打造、一站式、颠覆、壁垒、抓手、闭环生态
+- 像真人随手写：可口语、可短句、可有口头禅、可省略主语、可留白不总结`,
+};
+
+async function doRewrite(regen) {
+  if (!CUR) return;
+  const btn = regen ? $("#btnRwRe") : $("#btnRw");
+  const txt = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spin"></span> 生成中…`;
+  $("#rwOut").className = "out empty";
+  $("#rwOut").textContent = regen ? "换一版中，通常 10~20 秒…" : "AI 正在读原文并重写，通常 10~20 秒…";
+
+  const len = $("#rwLen").value;
+  const style = STYLE_MAP[$("#rwStyle").value];
+  const human = HUMAN_MAP[$("#rwHuman").value];
+  const extra = $("#rwExtra").value.trim();
+  const seed = regen ? `\n\n【重要】这是第 ${Math.floor(Math.random() * 900 + 100)} 次重写，必须换完全不同的开头方式和例证，不要与上一版雷同。` : "";
+
+  const prompt = `你是一位资深公众号编辑。现在要仿写一篇参考文章。
+
+【参考文章标题】
+${CUR.title}
+
+【你的任务】
+${style}
+
+【字数要求】
+约 ${len} 字，不要少于 ${Math.round(len * 0.8)} 字。
+
+【写作风格要求】
+${human}
+${HUMANIZER[$("#rwHuman").value] || ""}
+${extra ? `\n【额外要求】\n${extra}` : ""}${seed}
+
+只输出文章正文，不要标题、不要小标题、不要"以下是"之类的开场白。`;
+
+  try {
+    RWTEXT = await ai(prompt, Math.round(len * 2));
+    $("#rwOut").className = "out";
+    $("#rwOut").textContent = RWTEXT;
+    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").length + " 字";
+  } catch (e) {
+    $("#rwOut").className = "out empty";
+    $("#rwOut").textContent = "生成失败：" + e.message + "。稍后重试，或检查代理是否可用。";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = txt;
+  }
+}
+$("#btnRw").onclick = () => doRewrite(false);
+$("#btnRwRe").onclick = () => doRewrite(true);
+
+/* ═══════════ 去味润色（Humanizer-zh 二次改写） ═══════════ */
+async function humanizePass() {
+  if (!RWTEXT) { alert("先生成仿写稿再润色"); return; }
+  const btn = $("#btnHumanize"), t = btn.textContent;
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 去味中…`;
+  try {
+    const out = await ai(`你是一位中文文本润色编辑，参照 Humanizer-zh 的去 AI 味规则改写下面这段文字。
+要求：
+- 删除空泛铺垫、假对比、套话收尾、客服腔、宣传语式拔高、AI 高频词（赋能/至关重要/深入探讨/无缝/闭环/打造/一站式）
+- 句式长短交错，连接词只在有实际作用时保留，不要整齐排比
+- 绝对禁止新增任何原文没有的事实、数字、人名、日期、经历
+- 保留所有真实信息、否定、限定、因果、归因与作者立场
+- 只输出润色后的正文，不要任何解释、清单或自评
+
+【待润色文本】
+${RWTEXT}`, Math.round(RWTEXT.length * 1.5));
+    RWTEXT = out;
+    $("#rwOut").textContent = RWTEXT;
+    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").length + " 字";
+  } catch (e) { alert("去味失败：" + e.message); }
+  finally { btn.disabled = false; btn.textContent = t; }
+}
+
+/* ═══════════ 公众号排版（doocs/md 风格，商务蓝主题） ═══════════ */
+const WX_THEME_CSS = `.wx-theme{font-size:16px;color:#2b2b2b;line-height:1.85;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;word-break:break-word}.wx-theme h1{font-size:22px;font-weight:700;color:#1d4ed8;margin:26px 0 14px;line-height:1.4}.wx-theme h2{font-size:19px;font-weight:700;color:#1d4ed8;margin:24px 0 12px;padding-left:12px;border-left:4px solid #1d4ed8;line-height:1.4}.wx-theme h3{font-size:17px;font-weight:600;color:#0f172a;margin:20px 0 10px}.wx-theme p{margin:14px 0;text-align:justify}.wx-theme strong{color:#1d4ed8;font-weight:600}.wx-theme em{font-style:normal;color:#b91c1c;font-weight:600}.wx-theme blockquote{margin:16px 0;padding:12px 16px;background:#f1f5ff;border-left:4px solid #1d4ed8;border-radius:0 6px 6px 0;color:#334155}.wx-theme ul,.wx-theme ol{padding-left:22px;margin:14px 0}.wx-theme li{margin:8px 0}.wx-theme img{max-width:100%;border-radius:8px;margin:14px 0}.wx-theme a{color:#1d4ed8}.wx-theme hr{border:none;border-top:1px solid #e2e8f0;margin:20px 0}.wx-theme pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:8px;overflow:auto;font-size:14px;line-height:1.6}.wx-theme code{background:#eef2ff;color:#4338ca;padding:2px 6px;border-radius:4px;font-size:14px}.wx-theme pre code{background:transparent;color:inherit;padding:0}`;
+
+function typesetHTML(md) {
+  const body = (window.marked && marked.parse) ? marked.parse(md || "") : (md || "").replace(/\n+/g, "<br>");
+  return `<div class="wx-theme">${body}</div>`;
+}
+function openTypeset() {
+  if (!RWTEXT) { alert("先生成仿写稿"); return; }
+  $("#tsPrev").innerHTML = typesetHTML(RWTEXT);
+  $("#tsMask").classList.remove("hide");
+}
+function fallbackCopy(html) {
+  const ta = document.createElement("textarea");
+  ta.value = html; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); alert("已复制（兼容模式），去公众号后台粘贴即可"); }
+  catch (e) { alert("复制失败，请手动在预览区框选内容复制"); }
+  document.body.removeChild(ta);
+}
+function copyWx() {
+  const md = RWTEXT || "";
+  const body = typesetHTML(md);
+  const full = `<!doctype html><html><head><meta charset="utf-8"><style>${WX_THEME_CSS}</style></head><body>${body}</body></html>`;
+  const blobHtml = new Blob([full], { type: "text/html" });
+  const blobText = new Blob([md], { type: "text/plain" });
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([new ClipboardItem({ "text/html": blobHtml, "text/plain": blobText })])
+      .then(() => alert("已复制公众号格式，去公众号后台 Ctrl+V 即可，样式自动带上"))
+      .catch(() => fallbackCopy(full));
+  } else fallbackCopy(full);
+}
+function dl(name, content, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function downloadWxHtml() {
+  const body = typesetHTML(RWTEXT || "");
+  const full = `<!doctype html><html><head><meta charset="utf-8"><style>${WX_THEME_CSS}</style></head><body>${body}</body></html>`;
+  dl("公众号排版.html", full, "text/html");
+}
+function downloadMd() { dl("仿写稿.md", RWTEXT || "", "text/markdown"); }
+
+$("#btnHumanize").onclick = humanizePass;
+$("#btnTypeset").onclick = openTypeset;
+
+$("#btnSave").onclick = () => {
+  if (!RWTEXT) { alert("先生成仿写稿再保存"); return; }
+  MYLIST.unshift({
+    title: CUR.title, text: RWTEXT, from: "仿写：" + CUR.title.slice(0, 12) + "…",
+    words: RWTEXT.replace(/\s/g, "").length,
+    time: new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+  });
+  localStorage.setItem("wxhot_mine", JSON.stringify(MYLIST));
+  renderMy();
+  alert("已存入「我的作品」");
+};
+
+/* ═══════════ 配图 ═══════════ */
+async function autoPrompt() {
+  const btn = $("#btnImAuto");
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 思考中…`;
+  try {
+    const p = await ai(`根据这个公众号文章标题，想出一个适合做配图的画面提示词（英文，40字以内，只要提示词本身，不要解释）：\n${CUR ? CUR.title : ""}`, 100);
+    $("#imPrompt").value = p.replace(/^["']|["']$/g, "").trim();
+  } catch (e) { alert("失败：" + e.message); }
+  btn.disabled = false; btn.textContent = "自动写提示词";
+}
+$("#btnImAuto").onclick = autoPrompt;
+
+function svgPlaceholder(text, ratio, style) {
+  const W = 400, H = Math.round(400 / ratio);
+  const tint = { real: "#dbeafe", illu: "#d1fae5", anime: "#fce7f3", "3d": "#ede9fe", ink: "#f3f4f6" }[style] || "#dbeafe";
+  const fg = { real: "#1e40af", illu: "#047857", anime: "#9d174d", "3d": "#5b21b6", ink: "#374151" }[style] || "#1e40af";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <rect width="${W}" height="${H}" fill="${tint}"/>
+    <rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${fg}" stroke-opacity=".25" stroke-width="2"/>
+    <circle cx="${W / 2}" cy="${H / 2 - 14}" r="26" fill="none" stroke="${fg}" stroke-opacity=".35" stroke-width="2"/>
+    <text x="${W / 2}" y="${H / 2 + 6}" font-size="13" fill="${fg}" fill-opacity=".75" text-anchor="middle">${ratio}</text>
+    <text x="${W / 2}" y="${H / 2 + 32}" font-size="10" fill="${fg}" fill-opacity=".55" text-anchor="middle">配图生成中</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+$("#btnIm").onclick = async () => {
+  const ratio = $("#imRatio").value, style = $("#imStyle").value;
+  const prompt = $("#imPrompt").value.trim() || CUR.title;
+  const btn = $("#btnIm");
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 生成中…`;
+  const label = { real: "写实摄影", illu: "扁平插画", anime: "日系动漫", "3d": "3D 渲染", ink: "水墨国风" }[style];
+  const eng = { real: "photorealistic, cinematic lighting, 8k", illu: "flat vector illustration, clean", anime: "anime style, vibrant", "3d": "3D render, octane, soft shadows", ink: "chinese ink wash painting" }[style];
+
+  // 生成后端（edge function /api/image）接好后自动切换；未接则先出占位图
+  try {
+    const r = await fetch("api/image", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt + ", " + eng, ratio, style }),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      const urls = j.images || j.data || [];
+      if (urls.length) {
+        $("#imOut").innerHTML = urls.map((u, i) => `
+          <div class="imgbox"><img src="${esc(u.image_url || u.url)}" referrerpolicy="no-referrer">
+          <div class="cap">图 ${i + 1} · ${esc(prompt.slice(0, 30))}</div></div>`).join("");
+        btn.disabled = false; btn.textContent = "生成图片";
+        return;
+      }
+    }
+  } catch (e) { /* 未接后端，走占位 */ }
+
+  $("#imOut").innerHTML = `
+    <div class="imgbox"><img src="${svgPlaceholder(prompt, ratio, style)}">
+      <div class="cap">占位图 · ${esc(label)} · ${ratio}</div></div>
+    <div class="imgbox" style="display:grid;place-items:center;padding:20px;border-style:dashed">
+      <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
+        图片生成后端<br>还没接上<br><br>
+        <code style="background:var(--bg-2);padding:2px 6px;border-radius:4px">api/image</code><br>
+        需要一个文生图 API
+      </div>
+    </div>`;
+  setTimeout(() => { btn.disabled = false; btn.textContent = "生成图片"; }, 900);
+};
+
+/* ═══════════ AIGC 检测 ═══════════ */
+$("#btnDet").onclick = async () => {
+  const mode = $("#detSrc").value;
+  const text = mode === "rw" ? RWTEXT : $("#detCustom").value.trim();
+  if (!text) { alert("没有可检测的文本"); return; }
+  if (text.replace(/\s/g, "").length < 200) { alert("文本不足 200 字，朱雀检测有最低长度要求"); return; }
+
+  const btn = $("#btnDet");
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 检测中…`;
+  $("#detOut").innerHTML = `<div class="note info">正在送检，朱雀检测通常 5~15 秒…</div>`;
+
+  try {
+    const r = await fetch("api/detect", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!r.ok) throw new Error("检测服务返回 " + r.status);
+    const j = await r.json();
+    renderDet(j);
+  } catch (e) {
+    $("#detOut").innerHTML = `
+      <div class="note">
+        <b>检测服务未接通（${esc(e.message)}）。</b><br>
+        朱雀检测需要单独跑一个后端服务，因为它依赖 Python + Node 环境，不能放在纯静态站里。<br><br>
+        你有两个选择：<br>
+        ① 在本地或轻量 VPS 部署 <code>Sophomoresty/zhuque</code>，然后把 api/detect 指向它；<br>
+        ② 先用内置的启发式检测看个大概（下面这个结果仅供参考，不等同于朱雀）。
+      </div>
+      <button class="btn btn-g" id="btnHeur">先用启发式检测看个大概</button>
+      <div id="heurOut" style="margin-top:14px"></div>`;
+    $("#btnHeur").onclick = () => heuristicDetect(text);
+  } finally {
+    btn.disabled = false; btn.textContent = "开始检测";
+  }
+};
+
+function renderDet(j) {
+  const conf = Math.round((j.confidence || 0) * 100);
+  const cls = conf <= 30 ? "lo" : conf <= 60 ? "mi" : "hi";
+  const txt = conf <= 30 ? "人味充足" : conf <= 60 ? "AI 味中等" : "AI 味偏重";
+  const segs = (j.segment_labels || []).map(s => {
+    const ai = s.label === 1;
+    return `<div class="seg-i ${ai ? "ai" : "hu"}">
+      <span class="seg-p ${ai ? "ai" : "hu"}">${ai ? "AI " + Math.round(s.conf * 100) + "%" : "真人"}</span>
+      <span class="seg-t">${esc(s.text)}</span></div>`;
+  }).join("");
+  $("#detOut").innerHTML = `
+    <div class="dres">
+      <div class="gauge ${cls}">${conf}%</div>
+      <div class="dinfo">
+        <div class="t">${txt}</div>
+        <div class="s">整体 AI 生成概率 ${conf}%。${conf > 30 ? "标红段落建议改写后再发布。" : "可以放心使用。"}
+        ${j.availableUses != null ? "<br>本 IP 剩余可用次数：" + j.availableUses : ""}</div>
+      </div>
+    </div>
+    ${segs ? `<div class="out-h" style="margin-bottom:10px"><span class="out-t">分段结果</span></div><div class="seg">${segs}</div>` : ""}`;
+}
+
+function heuristicDetect(text) {
+  // 前端启发式：统计 AI 腔调词密度 + 句长均匀度，仅供参考
+  const AI_WORDS = ["此外","不仅","至关重要","显著","综上","值得注意的是","不难发现","众所周知",
+    "随着…的发展","在当今","发挥着重要作用","提供了有力支撑"," deeply","进一步","与此同时",
+    "赋能","抓手","闭环","生态","范式","底层逻辑","方法论","颗粒度","对齐","势能"];
+  const found = AI_WORDS.filter(w => text.includes(w));
+  const sentences = text.split(/[。！？!?\n]/).filter(s => s.trim().length > 3);
+  const lens = sentences.map(s => s.length);
+  const avg = lens.reduce((a, b) => a + b, 0) / (lens.length || 1);
+  const variance = lens.reduce((a, b) => a + (b - avg) ** 2, 0) / (lens.length || 1);
+  const uniform = variance < 40;
+  let score = Math.min(88, 14 + found.length * 7 + (uniform ? 14 : 0));
+  const conf = score / 100;
+
+  const cls = conf <= .3 ? "lo" : conf <= .6 ? "mi" : "hi";
+  const txt = conf <= .3 ? "人味充足（参考）" : conf <= .6 ? "AI 味中等（参考）" : "AI 味偏重（参考）";
+  const hits = found.length ? found.map(w => `「${w}」`).join("、") : "未命中";
+
+  $("#heurOut").innerHTML = `
+    <div class="note info">以下是<b>前端启发式</b>结果，只看 AI 腔调词密度和句长均匀度，<b>不等同于朱雀检测结果</b>，只作参考。</div>
+    <div class="dres">
+      <div class="gauge ${cls}">${score}%</div>
+      <div class="dinfo">
+        <div class="t">${txt}</div>
+        <div class="s">命中 AI 腔调词：${esc(hits)}<br>
+        句长均匀度：${uniform ? "偏整齐（AI 味特征）" : "长短交错（正常）"}<br>
+        建议：${score > 60 ? "把上面命中的词换成人话，多加长短句交错" : "问题不大"}</div>
+      </div>
+    </div>`;
+}
+
+/* ═══════════ 导航 ═══════════ */
+$$("nav button").forEach(b => b.onclick = () => {
+  $$("nav button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  $$(".page").forEach(p => p.classList.remove("on"));
+  $("#pg-" + b.dataset.pg).classList.add("on");
+  if (b.dataset.pg === "mine") renderMy();
+});
+
+loadData();
+renderMy();
+</script>
+
+<!-- 公众号排版弹窗 -->
+<div class="mask hide" id="tsMask" onclick="if(event.target===this)this.classList.add('hide')">
+  <div class="modal">
+    <div class="modal-h">
+      <h3>公众号排版预览</h3>
+      <span class="x" onclick="document.getElementById('tsMask').classList.add('hide')">×</span>
+    </div>
+    <div class="ts-bar">
+      <button class="btn btn-p" onclick="copyWx()">复制公众号格式</button>
+      <button class="btn btn-g" onclick="downloadWxHtml()">下载 HTML</button>
+      <button class="btn btn-g" onclick="downloadMd()">下载 Markdown</button>
+      <span class="sp">复制后去公众号后台 Ctrl+V，样式自动带上</span>
+    </div>
+    <div class="modal-b"><div class="ts-prev" id="tsPrev"></div></div>
+  </div>
+</div>
+
+</body>
+</html>

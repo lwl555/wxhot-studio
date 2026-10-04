@@ -1,0 +1,8 @@
+# 本地验证与工具（不部署）
+.tools/
+shots/
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+.vscode/
