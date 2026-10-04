@@ -1,0 +1,49 @@
+name: 每日热榜采集
+
+# 每天自动抓取最新热榜并更新 articles.json
+# 时间：UTC 01:00 = 北京时间 09:00；UTC 10:00 = 北京时间 18:00
+on:
+  schedule:
+    - cron: '0 1 * * *'
+    - cron: '0 10 * * *'
+  workflow_dispatch:      # 支持在 GitHub 页面手动点「Run workflow」立即跑一次
+
+permissions:
+  contents: write         # 允许提交更新数据文件
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 抓取最新热榜
+        run: python fetch_hot.py
+
+      - name: 采集真实封面
+        continue-on-error: true      # 封面采集失败不影响主数据
+        run: python fetch_covers.py
+
+      - name: 检查数据是否变化
+        id: check
+        run: |
+          git diff --quiet data/articles.json && echo "changed=no" >> $GITHUB_OUTPUT || echo "changed=yes" >> $GITHUB_OUTPUT
+
+      - name: 提交更新
+        if: steps.check.outputs.changed == 'yes'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/articles.json
+          git commit -m "chore: 自动更新热榜数据 $(date +'%Y-%m-%d %H:%M')"
+          git push
+
+      - name: 汇总结果
+        run: |
+          echo "采集完成：$(python -c "import json;d=json.load(open('data/articles.json',encoding='utf-8'));a=d['articles'] if isinstance(d,dict) else d;print(len(a),'篇, 真实阅读量',sum(1 for x in a if x.get('hasRealRead')),'篇')")"
