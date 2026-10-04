@@ -227,6 +227,35 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .empty-tip .t{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--ink-2)}
 .empty-tip .s{font-size:13px;line-height:1.7;max-width:400px;margin:0 auto}
 
+.det-sum{display:flex;align-items:center;gap:16px;margin-bottom:14px}
+.det-sc{font-size:40px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.det-sc small{font-size:17px;font-weight:600;margin-left:2px}
+.det-lv{font-size:15px;font-weight:600;margin-bottom:3px}
+.det-eng{font-size:11.5px;color:var(--ink-3)}
+.det-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg-2);margin-bottom:8px}
+.det-bar span{display:block;height:100%}
+.det-legend{display:flex;gap:14px;font-size:11.5px;color:var(--ink-3);margin-bottom:14px;flex-wrap:wrap}
+.det-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.det-segs{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto}
+.det-seg{padding:9px 12px;border-radius:7px;border:1px solid var(--line);background:#fff}
+.det-seg.suspect{border-color:#fde68a;background:#fffbeb}
+.det-seg.ai{border-color:#fecaca;background:var(--red-50)}
+.det-seg-h{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.det-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;
+  background:var(--green-50);color:#047857}
+.det-seg.suspect .det-badge{background:#fef3c7;color:#b45309}
+.det-seg.ai .det-badge{background:#fee2e2;color:var(--red)}
+.det-cf{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.det-tx{font-size:12.5px;line-height:1.65;color:var(--ink-2)}
+.srch{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+  border-radius:8px;padding:0 11px;margin-bottom:14px;color:var(--ink-3);transition:.15s}
+.srch:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-50)}
+.srch input{flex:1;border:none;outline:none;padding:9px 0;font-size:13px;
+  font-family:inherit;color:var(--ink);min-width:0;background:transparent}
+.srch input::placeholder{color:var(--ink-3)}
+.srch-c{display:none;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-3);padding:0 3px}
+.srch-c.on{display:block}
+.srch-c:hover{color:var(--ink)}
 .btn-sm{padding:5px 11px;font-size:12px;border-radius:6px;white-space:nowrap}
 /* ── AI 助手面板 ── */
 .as-mask{position:fixed;inset:0;background:rgba(15,23,42,.32);opacity:0;
@@ -409,6 +438,12 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
       <div class="stat"><div class="k">真实阅读量</div><div class="v" id="sReal">—</div></div>
       <div class="stat"><div class="k">最高阅读</div><div class="v" id="sMax">—</div></div>
       <div class="stat"><div class="k">覆盖平台</div><div class="v" id="sPlat">—</div></div>
+    </div>
+
+    <div class="srch">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" placeholder="搜索标题 / 公众号 / 分类关键词…" autocomplete="off">
+      <span class="srch-c" id="qClear" title="清空">×</span>
     </div>
 
     <div class="filters">
@@ -602,13 +637,15 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 /* ═══════════ 配置 ═══════════ */
 const CFG = {
   api: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/agnes-proxy/v1/chat/completions",
+  // 真·AIGC 检测（腾讯朱雀官方 API，走 Edge Function 隐藏密钥）
+  detect: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/aigc-detect",
   model: "agnes-2.0-flash",
   demo: "demo",
 };
 const DEMO_IMAGE = "data:image/svg+xml;utf8,";
 
 let DATA = { articles: [], updatedAt: "", source: "" };
-let FILT = { plat: "全部", cat: "全部", real: false };
+let FILT = { plat: "全部", cat: "全部", real: false, q: "" };
 let CUR = null;
 let RWTEXT = "";
 let MYLIST = [];
@@ -667,10 +704,17 @@ function renderFilters() {
 }
 
 function filtered() {
+  const q = (FILT.q || "").trim().toLowerCase();
   return (DATA.articles || []).filter(a => {
     if (FILT.plat !== "全部" && a.platform !== FILT.plat) return false;
     if (FILT.cat !== "全部" && a.category !== FILT.cat) return false;
     if (FILT.real && !a.hasRealRead) return false;
+    if (q) {
+      // 搜标题 / 平台 / 分类 / 榜单 / 公众号名（若数据带 account）
+      const hay = [a.title, a.platform, a.category, a.board, a.account]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 }
@@ -1027,36 +1071,43 @@ $("#btnIm").onclick = async () => {
   const label = { real: "写实摄影", illu: "扁平插画", anime: "日系动漫", "3d": "3D 渲染", ink: "水墨国风" }[style];
   const eng = { real: "photorealistic, cinematic lighting, 8k", illu: "flat vector illustration, clean", anime: "anime style, vibrant", "3d": "3D render, octane, soft shadows", ink: "chinese ink wash painting" }[style];
 
-  // 生成后端（edge function /api/image）接好后自动切换；未接则先出占位图
+  // 走已验证可用的免费图片模型 agnes-image-2.5-flash（与封面 AI 配图同一通道）
+  const sizeMap = { "16:9": "1K", "1:1": "1K", "3:4": "1K", "9:16": "1K" };
   try {
-    const r = await fetch("api/image", {
+    const full = `${prompt}, ${eng}, ${ratio} aspect ratio, high quality, no text, no watermark`;
+    const r = await fetch(CFG.api.replace("/v1/chat/completions", "/v1/images/generations"), {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: prompt + ", " + eng, ratio, style }),
+      body: JSON.stringify({ model: "agnes-image-2.5-flash", prompt: full, n: 1, size: sizeMap[ratio] || "1K" }),
     });
     if (r.ok) {
       const j = await r.json();
-      const urls = j.images || j.data || [];
-      if (urls.length) {
-        $("#imOut").innerHTML = urls.map((u, i) => `
-          <div class="imgbox"><img src="${esc(u.image_url || u.url)}" referrerpolicy="no-referrer">
-          <div class="cap">图 ${i + 1} · ${esc(prompt.slice(0, 30))}</div></div>`).join("");
+      const d0 = (j.data && j.data[0]) || {};
+      const raw = d0.url || d0.b64_json;
+      if (raw) {
+        const src = raw.startsWith("http") ? raw : "data:image/png;base64," + raw;
+        $("#imOut").innerHTML = `
+          <div class="imgbox"><img src="${esc(src)}" referrerpolicy="no-referrer">
+            <div class="cap">${esc(label)} · ${esc(ratio)} · ${esc(prompt.slice(0, 26))}</div></div>`;
         btn.disabled = false; btn.textContent = "生成图片";
         return;
       }
+    } else if (r.status === 429) {
+      $("#imOut").innerHTML = `<div class="imgbox" style="display:grid;place-items:center;padding:20px;border-style:dashed">
+        <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
+          免费额度限流中<br>约 20 次/分钟<br><br>等几秒再点一次</div></div>`;
+      btn.disabled = false; btn.textContent = "生成图片";
+      return;
     }
-  } catch (e) { /* 未接后端，走占位 */ }
-
-  $("#imOut").innerHTML = `
-    <div class="imgbox"><img src="${svgPlaceholder(prompt, ratio, style)}">
-      <div class="cap">占位图 · ${esc(label)} · ${ratio}</div></div>
-    <div class="imgbox" style="display:grid;place-items:center;padding:20px;border-style:dashed">
-      <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
-        图片生成后端<br>还没接上<br><br>
-        <code style="background:var(--bg-2);padding:2px 6px;border-radius:4px">api/image</code><br>
-        需要一个文生图 API
-      </div>
-    </div>`;
-  setTimeout(() => { btn.disabled = false; btn.textContent = "生成图片"; }, 900);
+    throw new Error("接口 " + r.status);
+  } catch (e) {
+    $("#imOut").innerHTML = `
+      <div class="imgbox"><img src="${svgPlaceholder(prompt, ratio, style)}">
+        <div class="cap">占位图 · ${esc(label)} · ${esc(ratio)}</div></div>
+      <div class="imgbox" style="display:grid;place-items:center;padding:20px;border-style:dashed">
+        <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
+          生成失败：${esc(e.message)}<br>可稍后重试</div></div>`;
+  }
+  btn.disabled = false; btn.textContent = "生成图片";
 };
 
 /* ═══════════ AIGC 检测 ═══════════ */
@@ -1071,29 +1122,72 @@ $("#btnDet").onclick = async () => {
   $("#detOut").innerHTML = `<div class="note info">正在送检，朱雀检测通常 5~15 秒…</div>`;
 
   try {
-    const r = await fetch("api/detect", {
+    // 优先调真·朱雀（Edge Function），不可用则降级启发式
+    let used = "zhuque";
+    let r = await fetch(CFG.detect, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
-    if (!r.ok) throw new Error("检测服务返回 " + r.status);
+    if (!r.ok) {
+      used = "heuristic";
+      throw new Error("朱雀后端未就绪");
+    }
     const j = await r.json();
-    renderDet(j);
+    if (!j.ok) throw new Error(j.error || "检测失败");
+    renderZhuque(j);
+    btn.disabled = false; btn.textContent = "开始检测";
+    return;
   } catch (e) {
-    $("#detOut").innerHTML = `
-      <div class="note">
-        <b>检测服务未接通（${esc(e.message)}）。</b><br>
-        朱雀检测需要单独跑一个后端服务，因为它依赖 Python + Node 环境，不能放在纯静态站里。<br><br>
-        你有两个选择：<br>
-        ① 在本地或轻量 VPS 部署 <code>Sophomoresty/zhuque</code>，然后把 api/detect 指向它；<br>
-        ② 先用内置的启发式检测看个大概（下面这个结果仅供参考，不等同于朱雀）。
-      </div>
-      <button class="btn btn-g" id="btnHeur">先用启发式检测看个大概</button>
-      <div id="heurOut" style="margin-top:14px"></div>`;
-    $("#btnHeur").onclick = () => heuristicDetect(text);
-  } finally {
+    // 降级：前端启发式（明确告知不是真朱雀）
+    $("#detOut").innerHTML = `<div class="note">
+      <b>朱雀后端暂未接入</b>（${esc(e.message)}），以下是<b>前端启发式估算</b>——
+      只统计 AI 腔调词密度与句长均匀度，<b>不等同于朱雀</b>，仅供参考。
+    </div><div id="heurOut" style="margin-top:14px"></div>`;
+    heuristicDetect(text);
     btn.disabled = false; btn.textContent = "开始检测";
   }
 };
+
+/* 渲染真朱雀的分段结果 */
+function renderZhuque(j) {
+  const score = Math.round((j.score ?? 0) * 100);
+  const lv = score >= 70 ? { t: "高度疑似 AI", c: "var(--red)" }
+    : score >= 40 ? { t: "部分疑似 AI", c: "#b45309" }
+    : { t: "偏人工创作", c: "var(--green)" };
+  const ratio = j.ratio || {};
+  const segs = j.segments || [];
+  const bad = segs.filter(s => s.risk !== "human");
+
+  $("#detOut").innerHTML = `
+    <div class="det-sum">
+      <div class="det-sc" style="color:${lv.c}">${score}<small>%</small></div>
+      <div class="det-meta">
+        <div class="det-lv" style="color:${lv.c}">${lv.t}</div>
+        <div class="det-eng">${esc(j.engine || "朱雀")} · 整篇 AI 置信度</div>
+      </div>
+    </div>
+    <div class="det-bar">
+      <span style="width:${Math.round((ratio["0"] || 0) * 100)}%;background:var(--green)"></span>
+      <span style="width:${Math.round((ratio["2"] || 0) * 100)}%;background:#f59e0b"></span>
+      <span style="width:${Math.round((ratio["1"] || 0) * 100)}%;background:var(--red)"></span>
+    </div>
+    <div class="det-legend">
+      <span><i style="background:var(--green)"></i>人工 ${Math.round((ratio["0"] || 0) * 100)}%</span>
+      <span><i style="background:#f59e0b"></i>疑似 ${Math.round((ratio["2"] || 0) * 100)}%</span>
+      <span><i style="background:var(--red)"></i>AI ${Math.round((ratio["1"] || 0) * 100)}%</span>
+    </div>
+    ${bad.length ? `<div class="note"><b>${bad.length} 个段落被标记</b>，建议改写标红部分：</div>` : ""}
+    <div class="det-segs">
+      ${segs.map(s => `
+        <div class="det-seg ${s.risk}">
+          <div class="det-seg-h">
+            <span class="det-badge">${s.risk === "ai" ? "AI" : s.risk === "suspect" ? "疑似" : "人工"}</span>
+            <span class="det-cf">${Math.round((s.conf ?? 0) * 100)}%</span>
+          </div>
+          <div class="det-tx">${esc((s.text || "").slice(0, 120))}${(s.text || "").length > 120 ? "…" : ""}</div>
+        </div>`).join("")}
+    </div>`;
+}
 
 function renderDet(j) {
   const conf = Math.round((j.confidence || 0) * 100);
@@ -1508,6 +1602,18 @@ function watchCovers() {
 const _renderList = renderList;
 renderList = function () { _renderList.apply(this, arguments); watchCovers(); };
 $$("#btnRefresh");
+/* ── 搜索 ── */
+$("#q").addEventListener("input", e => {
+  FILT.q = e.target.value;
+  $("#qClear").classList.toggle("on", !!FILT.q);
+  renderList();
+});
+$("#qClear").onclick = () => {
+  $("#q").value = ""; FILT.q = "";
+  $("#qClear").classList.remove("on");
+  renderList(); $("#q").focus();
+};
+
 updateAsSub();
 </script>
 
