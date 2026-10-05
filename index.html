@@ -257,6 +257,18 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .srch-c.on{display:block}
 .srch-c:hover{color:var(--ink)}
 .btn-sm{padding:5px 11px;font-size:12px;border-radius:6px;white-space:nowrap}
+/* ── 仿写正文内嵌配图 ── */
+.rw-figure{margin:16px 0;border-radius:8px;overflow:hidden;background:var(--bg-2);
+  border:1px solid var(--line)}
+.rw-figure img{display:block;width:100%;height:auto;max-height:300px;object-fit:cover}
+.rw-fig-ph{display:flex;align-items:center;justify-content:center;gap:9px;
+  min-height:96px;color:var(--ink-3);font-size:12px;padding:16px;text-align:center}
+.rw-fig-ph .spin{border-color:var(--line);border-top-color:var(--blue)}
+.rw-fig-cap{font-size:11px;color:var(--ink-3);padding:7px 10px;line-height:1.6;
+  background:var(--bg-2);border-top:1px solid var(--line)}
+.rw-fig-cap b{color:var(--ink-2);font-weight:600}
+.rw-illu{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.rw-illu .lb{font-size:12px;color:var(--ink-3)}
 /* ── AI 助手面板 ── */
 .as-mask{position:fixed;inset:0;background:rgba(15,23,42,.32);opacity:0;
   pointer-events:none;transition:.2s;z-index:150}
@@ -536,6 +548,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
         <span class="cnts" id="rwCnt">0 字</span>
       </div>
       <div class="out empty" id="rwOut">点「开始仿写」，AI 会读取原文重新写一篇</div>
+      <div class="rw-illu" id="rwImgBar"></div>
     </div>
 
     <!-- 配图 -->
@@ -946,13 +959,30 @@ ${human}
 ${HUMANIZER[$("#rwHuman").value] || ""}
 ${extra ? `\n【额外要求】\n${extra}` : ""}${seed}
 
-只输出文章正文，不要标题、不要小标题、不要"以下是"之类的开场白。`;
+【配图要求】重要
+整篇文章需要 2~4 张配图。请在**最合适的位置**插入配图标记，格式严格如下：
+[配图:英文提示词]
+
+要求：
+1. 标记必须放在**段落之间**，不要插在段落中间，更不要插在一句话中间。
+2. 提示词用**英文**，写清主体、氛围、色调（例：a lone traveler watching sunrise on a mountain ridge, warm orange tones, cinematic）。
+3. 提示词要贴合它前面那段的画面，不要凭空想象。
+4. 排版时：标题之后不要立刻插图；至少要有 2 段文字之后才插第一张图；结尾段之前不要再插图。
+5. 段落不少于 5 段时才考虑插图，段落太少就少插。
+
+示例：
+这是第一段文字，讲的是主角的处境。
+
+[配图:a weary office worker staring at spreadsheets under fluorescent light, muted blue tones, photorealistic]
+
+这是第二段文字……`;
 
   try {
-    RWTEXT = await ai(prompt, Math.round(len * 2));
+    RWTEXT = await ai(prompt, Math.round(len * 2.6));
     $("#rwOut").className = "out";
     $("#rwOut").textContent = RWTEXT;
-    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").length + " 字";
+    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").replace(/\[配图:[^\]]+\]/g, "").length + " 字";
+    renderImgMarks();     // 渲染配图标记 + 触发生成
   } catch (e) {
     $("#rwOut").className = "out empty";
     $("#rwOut").textContent = "生成失败：" + e.message + "。稍后重试，或检查代理是否可用。";
@@ -963,6 +993,118 @@ ${extra ? `\n【额外要求】\n${extra}` : ""}${seed}
 }
 $("#btnRw").onclick = () => doRewrite(false);
 $("#btnRwRe").onclick = () => doRewrite(true);
+
+/* ═══════════ 仿写配图：解析 [配图:xxx] 标记并就地生成 ═══════════ */
+const RW_IMG_CACHE = {};          // prompt -> dataURL/url
+let rwImgRunning = 0;
+
+/* 提取正文里所有 [配图:xxx] */
+function parseImgMarks(text) {
+  return [...text.matchAll(/\[配图:([^\]]+)\]/g)].map(m => m[1].trim()).filter(Boolean);
+}
+
+/* 把正文渲染成 HTML：文字段落 + 配图占位容器 */
+function renderImgMarks() {
+  const box = $("#rwOut");
+  const text = RWTEXT;
+  if (!text) return;
+  const marks = parseImgMarks(text);
+  if (!marks.length) {
+    box.className = "out";
+    box.textContent = text;
+    $("#rwImgBar").innerHTML = `<span class="lb">本文未标记配图位置</span>`;
+    return;
+  }
+  // 切分：文字 / 配图标记交替
+  const parts = [];
+  let last = 0;
+  const re = /\[配图:([^\]]+)\]/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const seg = text.slice(last, m.index);
+    if (seg.trim()) parts.push({ t: "text", v: seg });
+    parts.push({ t: "img", v: m[1].trim(), i: parts.filter(x => x.t === "img").length });
+    last = re.lastIndex;
+  }
+  const tail = text.slice(last);
+  if (tail.trim()) parts.push({ t: "text", v: tail });
+
+  box.className = "out rw-rich";
+  box.innerHTML = parts.map(p => p.t === "text"
+    ? `<p>${esc(p.v)}</p>`
+    : `<figure class="rw-figure" data-rwimg="${p.i}" data-prompt="${esc(p.v)}">
+         <div class="rw-fig-ph"><span class="spin"></span>正在生成配图 ${p.i}…</div>
+         <figcaption class="rw-fig-cap">配图 ${p.i} · 提示词：<b>${esc(p.v)}</b></figcaption>
+       </figure>`).join("");
+
+  // 工具条
+  $("#rwImgBar").innerHTML = `<span class="lb">本文 ${marks.length} 处配图</span>
+    <button class="btn btn-g btn-sm" id="btnRwImgAll">生成全部配图</button>
+    <button class="btn btn-g btn-sm" id="btnRwImgStrip">去掉标记（纯文字）</button>`;
+  $("#btnRwImgAll").onclick = () => genAllRwImgs();
+  $("#btnRwImgStrip").onclick = () => {
+    RWTEXT = RWTEXT.replace(/\s*\[配图:[^\]]+\]\s*/g, "\n\n");
+    $("#rwOut").className = "out";
+    $("#rwOut").textContent = RWTEXT;
+    $("#rwImgBar").innerHTML = "";
+  };
+
+  genAllRwImgs();
+}
+
+/* 生成正文里的全部配图（串行 + 限速，免费档 20 次/分） */
+async function genAllRwImgs() {
+  const figs = $$("#rwOut .rw-figure");
+  if (!figs.length) return;
+  for (const fig of figs) {
+    if (fig.dataset.done) continue;
+    if (rwImgRunning > 0) return;             // 防并发
+    const prompt = fig.dataset.prompt;
+    fig.dataset.done = "1";
+    rwImgRunning++;
+    const ph = fig.querySelector(".rw-fig-ph");
+    try {
+      if (RW_IMG_CACHE[prompt]) { renderRwFig(fig, RW_IMG_CACHE[prompt]); rwImgRunning--; continue; }
+      if (ph) ph.innerHTML = `<span class="spin"></span>生成中（约 8~15 秒）…`;
+      const r = await fetch(CFG.api.replace("/v1/chat/completions", "/v1/images/generations"), {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "agnes-image-2.5-flash",
+          prompt: `${prompt}, editorial magazine illustration, high quality, no text, no words, no watermark`,
+          n: 1, size: "1K",
+        }),
+      });
+      if (r.status === 429) {
+        fig.dataset.done = "";
+        if (ph) ph.innerHTML = "免费额度限流中（约 20 次/分），等几秒后点「生成全部配图」重试";
+        rwImgRunning--; return;
+      }
+      if (!r.ok) throw new Error("接口 " + r.status);
+      const j = await r.json();
+      const d0 = (j.data && j.data[0]) || {};
+      const raw = d0.url || d0.b64_json;
+      if (!raw) throw new Error("无图片返回");
+      const src = raw.startsWith("http") ? raw : "data:image/png;base64," + raw;
+      RW_IMG_CACHE[prompt] = src;
+      renderRwFig(fig, src);
+    } catch (e) {
+      if (ph) ph.innerHTML = `配图生成失败：${esc(e.message)}（可稍后重试）`;
+    } finally { rwImgRunning--; }
+    await new Promise(r => setTimeout(r, 1200));  // 轻限速
+  }
+}
+function renderRwFig(fig, src) {
+  const ph = fig.querySelector(".rw-fig-ph");
+  if (ph) ph.remove();
+  let img = fig.querySelector("img");
+  if (!img) {
+    img = document.createElement("img");
+    fig.prepend(img);
+  }
+  img.src = src;
+  img.referrerPolicy = "no-referrer";
+  img.alt = "AI 配图";
+}
 
 /* ═══════════ 去味润色（Humanizer-zh 二次改写） ═══════════ */
 async function humanizePass() {
@@ -981,8 +1123,8 @@ async function humanizePass() {
 【待润色文本】
 ${RWTEXT}`, Math.round(RWTEXT.length * 1.5));
     RWTEXT = out;
-    $("#rwOut").textContent = RWTEXT;
-    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").length + " 字";
+    renderImgMarks();     // 重新渲染（配图标记已缓存，不会重复生成）
+    $("#rwCnt").textContent = RWTEXT.replace(/\s/g, "").replace(/\[配图:[^\]]+\]/g, "").length + " 字";
   } catch (e) { alert("去味失败：" + e.message); }
   finally { btn.disabled = false; btn.textContent = t; }
 }
@@ -994,9 +1136,38 @@ function typesetHTML(md) {
   const body = (window.marked && marked.parse) ? marked.parse(md || "") : (md || "").replace(/\n+/g, "<br>");
   return `<div class="wx-theme">${body}</div>`;
 }
+/* 手写渲染：绕开 marked 对特殊字符 URL 的解析缺陷 */
+function typesetRich(md) {
+  const esc2 = s => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const blocks = [];
+  const re = /!\[([^\]]*)\]\(([^)]+)\)|\[配图:([^\]]+)\]/g;
+  let last = 0, m;
+  while ((m = re.exec(md)) !== null) {
+    const seg = md.slice(last, m.index);
+    if (seg.trim()) blocks.push(esc2(seg).replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>"));
+    if (m[2]) {
+      const u = m[2].trim();
+      blocks.push(`<img src="${esc2(u)}" alt="${esc2(m[1] || "配图")}">`);
+    } else if (m[3]) {
+      const src = RW_IMG_CACHE[(m[3] || "").trim()];
+      if (src) blocks.push(`<img src="${esc2(src)}" alt="配图">`);
+      else blocks.push(`<p><em>[此处配图：${esc2(m[3].trim())}（尚未生成）]</em></p>`);
+    }
+    last = re.lastIndex;
+  }
+  const tail = md.slice(last);
+  if (tail.trim()) blocks.push(esc2(tail).replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>"));
+  const html = blocks.map(b => b.startsWith("<img") || b.startsWith("<p><em") ? b : `<p>${b}</p>`).join("\n");
+  return `<div class="wx-theme">${html}</div>`;
+}
 function openTypeset() {
   if (!RWTEXT) { alert("先生成仿写稿"); return; }
-  $("#tsPrev").innerHTML = typesetHTML(RWTEXT);
+  // 已生成的配图替换成图片语法；未生成的用提示文字占位
+  let md = RWTEXT.replace(/\[配图:([^\]]+)\]/g, (m, prompt) => {
+    const src = RW_IMG_CACHE[(prompt || "").trim()];
+    return src ? `![](${src})` : `[配图:${prompt.trim()}]`;
+  });
+  $("#tsPrev").innerHTML = typesetRich(md);
   $("#tsMask").classList.remove("hide");
 }
 function fallbackCopy(html) {
@@ -1029,7 +1200,13 @@ function downloadWxHtml() {
   const full = `<!doctype html><html><head><meta charset="utf-8"><style>${WX_THEME_CSS}</style></head><body>${body}</body></html>`;
   dl("公众号排版.html", full, "text/html");
 }
-function downloadMd() { dl("仿写稿.md", RWTEXT || "", "text/markdown"); }
+function rwMdWithImages() {
+  return (RWTEXT || "").replace(/\[配图:([^\]]+)\]/g, (m, prompt) => {
+    const src = RW_IMG_CACHE[(prompt || "").trim()];
+    return src ? `\n\n![](${src})\n\n` : `\n\n*[此处配图：${prompt.trim()}（尚未生成）]*\n\n`;
+  });
+}
+function downloadMd() { dl("仿写稿.md", rwMdWithImages(), "text/markdown"); }
 
 $("#btnHumanize").onclick = humanizePass;
 $("#btnTypeset").onclick = openTypeset;
