@@ -437,6 +437,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     </nav>
     <div class="hd-r">
       <span class="src" id="srcInfo">数据源 —</span>
+      <button class="btn btn-g btn-sm" id="btnSync" title="与电脑同步（按需连接）">⇄ 同步</button>
       <button class="btn btn-g btn-sm" id="btnRefresh" title="重新采集最新热榜，按时间从新到旧排序">↻ 手动刷新</button>
       <button class="btn btn-p btn-sm" id="btnAssistant">AI 助手</button>
     </div>
@@ -620,6 +621,31 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 </div>
 
 <script src="vendor/marked.umd.js"></script>
+<!-- ═══ 同步弹窗（与 PC 端互相同步） ═══ -->
+<div class="mask hide" id="syncMask" onclick="if(event.target===this)this.classList.add('hide')">
+  <div class="modal" style="width:min(520px,100%)">
+    <div class="modal-h">
+      <h3>手机 ↔ 电脑同步</h3>
+      <span class="x" onclick="document.getElementById('syncMask').classList.add('hide')">×</span>
+    </div>
+    <div style="padding:18px 20px">
+      <div class="note info" style="margin-bottom:16px">
+        <b>按需连接</b>：只有你点按钮时才联网，平时不占资源、不耗电。
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px">同步码（手机和电脑填一样的）</label>
+        <input id="syncId" placeholder="例如：laowang2026" style="width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:7px;font-size:13px">
+        <div class="hint" style="margin-top:5px">两边填同一个码就能对上。用字母数字，别用中文。</div>
+      </div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-p" id="btnSyncPush">↑ 推上去（把手机的给电脑）</button>
+        <button class="btn btn-g" id="btnSyncPull">↓ 拉下来（拿电脑的）</button>
+      </div>
+      <div id="syncOut" style="font-size:12px;color:var(--ink-3);line-height:1.7">上次同步：—</div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ AI 智能助手面板 ═══ -->
 <div class="as-mask" id="asMask"></div>
 <aside class="as-panel" id="asPanel">
@@ -1982,6 +2008,102 @@ $("#qClear").onclick = () => {
 
 updateAsSub();
 renderProfile();
+
+/* ═══════════ 手机 ↔ 电脑同步（按需连接，不常连） ═══════════ */
+const SYNC = {
+  url: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/sync-bridge",
+  anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbnNzeWlxaXR1Z3FmbWNiZGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MDEyNzUsImV4cCI6MjA5ODk3NzI3NX0.9EfbEr7BQhZtbOwHJ3IrkOy16kcaxlmzuJuV0A2Z8Eg",
+  key: "wxhot_syncid",
+  last: null,
+};
+function syncPayload() {
+  return {
+    from: "mobile",
+    at: new Date().toISOString(),
+    cur: CUR ? { id: CUR.id, title: CUR.title, platform: CUR.platform, category: CUR.category,
+      readCountText: CUR.readCountText, hasRealRead: CUR.hasRealRead, board: CUR.board,
+      url: CUR.url, desc: CUR.desc || "" } : null,
+    rwtext: RWTEXT || "",
+    memory: { archive: archive(), chat: chatHist(), profile: profile() },
+    articlesCount: (DATA.articles || []).length,
+    articlesUpdatedAt: DATA.updatedAt || "",
+  };
+}
+async function syncPush() {
+  const id = ($("#syncId").value || "").trim();
+  if (!id) { $("#syncOut").textContent = "⚠️ 先填同步码"; return; }
+  const btn = $("#btnSyncPush"); const t = btn.textContent;
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 推送中…';
+  $("#syncOut").textContent = "正在连接…";
+  try {
+    const r = await fetch(SYNC.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + SYNC.anon, "x-sync-id": id },
+      body: JSON.stringify({ payload: syncPayload() }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) throw new Error(j.error || j.hint || ("接口 " + r.status));
+    localStorage.setItem(SYNC.key, id);
+    SYNC.last = "推送 " + new Date().toLocaleTimeString();
+    $("#syncOut").innerHTML = `✓ 已推上去（${new Date().toLocaleTimeString()}）<br>
+      电脑上点「拉下来」就能拿到：当前文章、仿写稿、助手记忆`;
+  } catch (e) {
+    const off = /Failed to fetch|NetworkError|404|函数不存在/i.test(e.message);
+    $("#syncOut").innerHTML = off
+      ? `⚠️ 同步服务还没开通<br>
+         <span style="line-height:1.9">需要在 Supabase 部署 <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">sync-bridge</code> 这个 Edge Function，
+         并建一张 <code style="background:var(--bg-2);padding:1px 5px;border-radius:3px">sync_store</code> 表。<br>
+         <b>不影响其他功能</b>——仿写、助手、配图都能正常用。</span>`
+      : `⚠️ 推送失败：${esc(e.message)}`;
+  } finally { btn.disabled = false; btn.textContent = t; }
+}
+async function syncPull() {
+  const id = ($("#syncId").value || "").trim();
+  if (!id) { $("#syncOut").textContent = "⚠️ 先填同步码"; return; }
+  const btn = $("#btnSyncPull"); const t = btn.textContent;
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> 拉取中…';
+  $("#syncOut").textContent = "正在连接…";
+  try {
+    const r = await fetch(SYNC.url + "?id=" + encodeURIComponent(id), {
+      headers: { "Authorization": "Bearer " + SYNC.anon },
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) throw new Error(j.error || j.hint || ("接口 " + r.status));
+    if (j.empty) { $("#syncOut").textContent = "那边还没有数据（先在电脑上点「推上去」）"; return; }
+    const p = j.payload || {}; const got = [];
+    if (p.cur) {
+      const a = Object.assign({ id: p.cur.id || "sync-" + Date.now(), cover: "", reprint: "" }, p.cur);
+      if (!(DATA.articles || []).some(x => x.id === a.id)) (DATA.articles || []).unshift(a);
+      renderStats(); renderFilters(); renderList();
+      openDrawer(a); got.push("文章《" + (p.cur.title || "").slice(0, 18) + "》");
+    }
+    if (p.rwtext) {
+      RWTEXT = p.rwtext; renderImgMarks();
+      got.push("仿写稿 " + RWTEXT.replace(/\s/g, "").length + " 字");
+    }
+    if (p.memory) {
+      if (p.memory.archive?.length) archiveSave(p.memory.archive);
+      try { localStorage.setItem(AS.chatKey, JSON.stringify(p.memory.chat || [])); } catch {}
+      if (p.memory.profile && Object.keys(p.memory.profile).length) profileSave(p.memory.profile);
+      renderProfile(); got.push("助手记忆 " + (p.memory.archive?.length || 0) + " 篇");
+    }
+    localStorage.setItem(SYNC.key, id);
+    SYNC.last = "拉取 " + new Date().toLocaleTimeString();
+    $("#syncOut").innerHTML = got.length
+      ? `✓ 拿到了：<b>${got.join("、")}</b><br>来源：${esc(p.from === "pc" ? "电脑" : "手机")}`
+      : "✓ 连接成功，但那边没有可同步的内容";
+  } catch (e) {
+    $("#syncOut").innerHTML = `⚠️ 拉取失败：${esc(e.message)}`;
+  } finally { btn.disabled = false; btn.textContent = t; }
+}
+$("#btnSync").onclick = () => {
+  const saved = localStorage.getItem(SYNC.key) || "";
+  if (saved && !$("#syncId").value) $("#syncId").value = saved;
+  $("#syncMask").classList.remove("hide");
+  if (SYNC.last) $("#syncOut").textContent = "上次" + SYNC.last;
+};
+$("#btnSyncPush").onclick = syncPush;
+$("#btnSyncPull").onclick = syncPull;
 </script>
 
 <!-- 公众号排版弹窗 -->
