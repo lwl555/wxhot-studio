@@ -278,6 +278,9 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-h-r .x{font-size:20px;color:var(--ink-3);cursor:pointer;line-height:1;
   padding:0 2px;user-select:none}
 .as-h-r .x:hover{color:var(--ink)}
+.as-mem{padding:10px 18px;border-bottom:1px solid var(--line);flex-shrink:0;background:#fbfcfe}
+.as-mem-t{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
+.as-mem-x{font-size:11.5px;color:var(--ink-2);line-height:1.6}
 .as-rec{padding:11px 18px;border-bottom:1px solid var(--line);flex-shrink:0;
   display:none;background:var(--bg-2)}
 .as-rec.on{display:block}
@@ -311,10 +314,13 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-typing i:nth-child(2){animation-delay:.18s}
 .as-typing i:nth-child(3){animation-delay:.36s}
 @keyframes asb{0%,60%,100%{opacity:.28;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-.as-in{border-top:1px solid var(--line);padding:11px 18px 13px;flex-shrink:0}
+.as-in{border-top:1px solid var(--line);padding:11px 18px 13px;flex-shrink:0;
+  transition:background .15s,box-shadow .15s}
+.as-in.drag{background:var(--blue-50);box-shadow:inset 0 0 0 2px var(--blue)}
+.as-imgbtn{width:auto;padding:0 11px;font-size:12px;font-weight:500;
+  border:1px solid var(--line);background:#fff;border-radius:7px;
+  cursor:pointer;color:var(--ink-2);flex-shrink:0;white-space:nowrap}
 .as-in-row{display:flex;gap:7px;align-items:stretch}
-.as-imgbtn{width:36px;border:1px solid var(--line);background:#fff;border-radius:7px;
-  cursor:pointer;font-size:15px;color:var(--ink-2);flex-shrink:0}
 .as-imgbtn:hover{border-color:var(--blue);color:var(--blue)}
 #asInput{flex:1;border:1px solid var(--line);border-radius:7px;padding:8px 11px;
   font-size:13px;font-family:inherit;outline:none;min-width:0}
@@ -618,18 +624,19 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     </div>
   </div>
 
+  <div class="as-mem" id="asProfile"></div>
   <div class="as-rec" id="asRec"></div>
 
   <div class="as-log" id="asLog"></div>
 
-  <div class="as-in">
+  <div class="as-in" id="asIn">
+    <div class="as-imgrow" id="asImgRow"></div>
     <div class="as-in-row">
-      <button class="as-imgbtn" id="asImgBtn" title="让助手看图（可分析封面/配图）">🖼</button>
-      <input id="asInput" placeholder="问我推荐选题、聊写法、让我看图…（Enter 发送）" autocomplete="off">
+      <button class="as-imgbtn" id="asImgBtn" title="选图让助手看（也支持 Ctrl+V 粘贴 / 拖进来）">＋图</button>
+      <input id="asInput" placeholder="问我选题、聊写法，或点「＋图」让我看图…" autocomplete="off">
       <button class="as-send" id="asSend">发送</button>
     </div>
-    <div class="as-imgrow" id="asImgRow"></div>
-    <div class="as-hint">助手会记住你看过的文章并据此推荐 · 生成的选题可一键进入仿写</div>
+    <div class="as-hint">🧠 三层记忆（读过什么 / 对话历史 / 你的画像）· 支持看图 · 选题可一键仿写</div>
   </div>
 </aside>
 
@@ -639,6 +646,8 @@ const CFG = {
   api: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/agnes-proxy/v1/chat/completions",
   // 真·AIGC 检测（腾讯朱雀官方 API，走 Edge Function 隐藏密钥）
   detect: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/aigc-detect",
+  // 真·实时采集（tophub.today 公开免 key）
+  fetch: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/fetch-hot",
   model: "agnes-2.0-flash",
   demo: "demo",
 };
@@ -1260,10 +1269,99 @@ renderMy();
    ══════════════════════════════════════════ */
 const AS = {
   model: "agnes-3.0-flash",
-  key: "wxhot_archive_v1",   // 阅读档案（自动存档）
-  imgs: [],                   // 待发送的图片
+  key: "wxhot_archive_v1",      // L1 事件记忆：看过/仿写过什么
+  chatKey: "wxhot_chat_v1",      // L2 会话记忆：对话历史（跨会话保留）
+  profileKey: "wxhot_profile_v1",// L3 长期记忆：用户画像/偏好
+  imgs: [],
   busy: false,
 };
+
+/* ══ L2 会话记忆：对话历史 ══ */
+function chatHist() {
+  try { return JSON.parse(localStorage.getItem(AS.chatKey)) || []; }
+  catch { return []; }
+}
+function chatPush(role, content) {
+  try {
+    const h = chatHist();
+    // 图片不存历史（base64 太大），只留文字摘要
+    h.push({ role, content: typeof content === "string" ? content : "[图片]", ts: Date.now() });
+    localStorage.setItem(AS.chatKey, JSON.stringify(h.slice(-40)));  // 保留最近40条
+  } catch {}
+}
+
+/* ══ L3 长期记忆：用户画像（由 AI 自动提炼） ══ */
+function profile() {
+  try { return JSON.parse(localStorage.getItem(AS.profileKey)) || {}; }
+  catch { return {}; }
+}
+function profileSave(p) {
+  try { localStorage.setItem(AS.profileKey, JSON.stringify(p)); } catch {}
+  renderProfile();
+}
+function profileNote(k, v) {
+  if (!v) return;
+  const p = profile();
+  if (k === "goal") {
+    p.goal = v;                                  // 单值：覆盖
+  } else {
+    const cur = Array.isArray(p[k]) ? p[k] : []; // 多值：追加去重
+    if (!cur.includes(v)) p[k] = [...cur, v].slice(0, 12);
+  }
+  p.updatedAt = Date.now();
+  profileSave(p);
+}
+/* 让 AI 自己提炼一条长期记忆 */
+async function distillMemory(userText, aiText) {
+  try {
+    const p = profile();
+    const r = await fetch(CFG.api, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: AS.model, max_tokens: 200, temperature: 0.2,
+        messages: [
+          { role: "system", content:
+`从下面这轮对话里，提取值得长期记住的用户信息。只输出 JSON，不要任何解释。
+可提取的字段（没有就留空数组）：
+{"topics":["用户关注的题材"],"style":["偏好的写作风格"],"platforms":["常看的平台"],"goal":"用户想达到的目标","notes":["其他值得记的点"]}
+只记录明确提到的偏好，不要猜测。` },
+          { role: "user", content: `用户说：${userText}\n助手回：${String(aiText).slice(0, 400)}` },
+        ],
+      }),
+    });
+    const j = await r.json();
+    const t = (j.choices?.[0]?.message?.content || "").trim();
+    const m = t.match(/\{[\s\S]*\}/);
+    if (!m) return;
+    const got = JSON.parse(m[0]);
+    // 合并（去重、追加）
+    const np = { ...p };
+    for (const k of ["topics", "style", "platforms", "notes"]) {
+      if (Array.isArray(got[k]) && got[k].length) {
+        const cur = Array.isArray(np[k]) ? np[k] : [];
+        np[k] = [...new Set([...cur, ...got[k]])].slice(0, 12);
+      }
+    }
+    if (got.goal) np.goal = got.goal;
+    np.updatedAt = Date.now();
+    profileSave(np);
+  } catch { /* 提炼失败不影响主流程 */ }
+}
+
+/* 渲染长期记忆到助手面板 */
+function renderProfile() {
+  const p = profile();
+  const box = $("#asProfile");
+  if (!box) return;
+  const parts = [];
+  if (p.topics?.length) parts.push(`关注：${p.topics.join("、")}`);
+  if (p.style?.length) parts.push(`风格：${p.style.join("、")}`);
+  if (p.platforms?.length) parts.push(`常看：${p.platforms.join("、")}`);
+  if (p.goal) parts.push(`目标：${p.goal}`);
+  box.innerHTML = parts.length
+    ? `<div class="as-mem-t">🧠 我记得你</div><div class="as-mem-x">${esc(parts.join(" ｜ "))}</div>`
+    : `<div class="as-mem-t">🧠 长期记忆</div><div class="as-mem-x" style="color:var(--ink-3)">多聊几句，我会自动记住你的题材和风格偏好</div>`;
+}
 
 /* ── 自动存档：记录你看过的/点过的文章 ── */
 function archive() {
@@ -1276,6 +1374,7 @@ function archiveSave(list) {
 function archiveAdd(a, act) {
   if (!a) return;
   const list = archive().filter(x => x.id !== a.id);
+  if (act === "仿写") profileNote("topics", a.category);   // 仿写过的题材 = 强兴趣信号
   list.push({
     id: a.id, t: a.title, p: a.platform, c: a.category,
     r: a.readCountText, act: act || "浏览", ts: Date.now()
@@ -1341,7 +1440,7 @@ function renderAsRec() {
 function openAs() {
   $("#asPanel").classList.add("on");
   $("#asMask").classList.add("on");
-  updateAsSub(); renderAsRec();
+  updateAsSub(); renderAsRec(); renderProfile();
   if (!$("#asLog").children.length) {
     asMsg("a", "你好，我是你的创作助手 👋\n\n我能帮你：\n• 推荐选题（会记住你爱看什么）\n• 聊写法、标题、开头\n• 看图分析（点左边 🖼 发图）\n• 挑中意的文章直接进仿写\n\n你平时关注什么题材？");
   }
@@ -1352,20 +1451,36 @@ function closeAs() {
   $("#asMask").classList.remove("on");
 }
 
-/* ── 看图：读取本地图片转 base64 ── */
+/* ── 看图：支持 选文件 / Ctrl+V 粘贴 / 拖拽 ── */
+function addImageFile(f) {
+  if (!f || !f.type.startsWith("image/")) return;
+  if (AS.imgs.length >= 3) { alert("一次最多 3 张图"); return; }
+  // 大图先压缩，避免 base64 过长被模型拒收
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1024;
+      let { width: w, height: h } = img;
+      if (w > max || h > max) {
+        const s = max / Math.max(w, h);
+        w = Math.round(w * s); h = Math.round(h * s);
+      }
+      const cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      AS.imgs.push(cv.toDataURL("image/jpeg", 0.85));
+      renderAsImgs();
+    };
+    img.onerror = () => { AS.imgs.push(reader.result); renderAsImgs(); };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(f);
+}
 function pickImage() {
   const inp = document.createElement("input");
   inp.type = "file"; inp.accept = "image/*";
-  inp.onchange = () => {
-    const f = inp.files[0]; if (!f) return;
-    const fr = new FileReader();
-    fr.onload = () => {
-      if (AS.imgs.length >= 3) return;
-      AS.imgs.push(fr.result);
-      renderAsImgs();
-    };
-    fr.readAsDataURL(f);
-  };
+  inp.onchange = () => { addImageFile(inp.files[0]); };
   inp.click();
 }
 function renderAsImgs() {
@@ -1378,22 +1493,39 @@ function renderAsImgs() {
   });
 }
 
-/* ── 核心：调 3.0-flash（支持图文混排） ── */
+/* ── 核心：调 3.0-flash（支持图文混排 + 三层记忆） ── */
 async function askAs(text) {
+  /* L1 事件记忆：最近读过的文章 */
   const arc = archive().slice(-12);
   const arcTxt = arc.length
-    ? "\n【用户阅读档案（最近）】\n" + arc.map((x, i) =>
+    ? "\n【L1 事件记忆 · 最近读过的文章】\n" + arc.map((x, i) =>
         `${i + 1}. [${x.p}·${x.c}·${x.act}] ${x.t}`).join("\n")
-    : "\n【档案为空】";
-  const sys = `你是「热文创作台」的智能创作助手，服务公众号/自媒体创作者。你的特点：会长期记住用户的阅读偏好并据此推荐选题。
+    : "\n【L1 事件记忆】暂无（用户还没读过东西）";
+
+  /* L3 长期记忆：用户画像 */
+  const p = profile();
+  const profBits = [];
+  if (p.topics?.length)    profBits.push(`关注题材：${p.topics.join("、")}`);
+  if (p.style?.length)     profBits.push(`写作风格：${p.style.join("、")}`);
+  if (p.platforms?.length) profBits.push(`常看平台：${p.platforms.join("、")}`);
+  if (p.goal)              profBits.push(`创作目标：${p.goal}`);
+  const profTxt = profBits.length
+    ? "\n【L3 长期记忆 · 用户画像】\n" + profBits.join("\n")
+    : "";
+
+  const sys = `你是「热文创作台」的智能创作助手，服务公众号/自媒体创作者。
+你有三层记忆，会跨会话记住用户：
 
 ${arcTxt}
+${profTxt}
+${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题材；给建议时贴合其写作风格。" : ""}
 
 要求：
 1. 回答简洁、口语化，像聊天一样，不要书面套话。
-2. 如果用户问选题，结合上面的档案偏好推荐，并说明为什么推荐。
+2. 如果用户问选题，结合记忆里的偏好推荐，并说明为什么推荐。
 3. 如果合适，在回答末尾另起一行，用 [仿写:文章标题] 格式给出 1-3 个可一键仿写的候选。
-4. 聊写法时给具体可执行建议，不要空话。`;
+4. 聊写法时给具体可执行建议，不要空话。
+5. 如果用户提到自己的身份/偏好/目标，要记住并体现在后续回答里。`;
 
   // 组装多模态消息：有图就带 image_url
   let content;
@@ -1404,15 +1536,18 @@ ${arcTxt}
     content = text;
   }
 
+  /* L2 会话记忆：带最近对话历史（多轮连贯） */
+  const hist = chatHist().slice(-10).filter(m => typeof m.content === "string" && m.content !== "[图片]");
+  const msgs = [{ role: "system", content: sys }];
+  hist.forEach(m => msgs.push({ role: m.role === "user" ? "user" : "assistant", content: m.content }));
+  msgs.push({ role: "user", content });
+
   const r = await fetch(CFG.api, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: AS.model,
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content },
-      ],
+      messages: msgs,
       max_tokens: 800,
       temperature: 0.8,
     }),
@@ -1469,6 +1604,10 @@ async function sendAs() {
       if (a) { archiveAdd(a, "点开"); closeAs(); openDrawer(a); }
       else asMsg("sys", "该标题不在当前榜单里，可在热榜里找相近选题。");
     });
+    // 写入会话记忆 + 异步提炼长期记忆
+    chatPush("user", text || "[图片]");
+    chatPush("assistant", rep);
+    distillMemory(text, rep);
     renderAsRec();
   } catch (e) {
     tip.remove();
@@ -1486,11 +1625,29 @@ $("#asSend").onclick = sendAs;
 $("#asImgBtn").onclick = pickImage;
 $("#asClear").onclick = () => {
   archiveSave([]);
-  updateAsSub(); renderAsRec();
-  asMsg("sys", "已清空阅读档案，助手会重新从零了解你。");
+  try { localStorage.removeItem(AS.chatKey); localStorage.removeItem(AS.profileKey); } catch {}
+  updateAsSub(); renderAsRec(); renderProfile();
+  asMsg("sys", "已清空全部记忆（阅读档案 + 对话历史 + 用户画像），我会从零重新了解你。");
 };
 $("#asInput").addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAs(); }
+});
+
+/* Ctrl+V 粘贴图片 */
+$("#asInput").addEventListener("paste", e => {
+  const items = e.clipboardData?.items || [];
+  for (const it of items) {
+    if (it.type.startsWith("image/")) { addImageFile(it.getAsFile()); e.preventDefault(); return; }
+  }
+});
+/* 拖拽图片到输入区 */
+["dragenter", "dragover"].forEach(ev =>
+  $("#asIn").addEventListener(ev, e => { e.preventDefault(); $("#asIn").classList.add("drag"); }));
+["dragleave", "drop"].forEach(ev =>
+  $("#asIn").addEventListener(ev, e => { e.preventDefault(); $("#asIn").classList.remove("drag"); }));
+$("#asIn").addEventListener("drop", e => {
+  const f = e.dataTransfer?.files?.[0];
+  if (f) addImageFile(f);
 });
 
 /* ── 手动刷新：重新拉数据 + 按时间从新到旧排序 ── */
@@ -1498,23 +1655,55 @@ let sortNewest = true;
 $("#btnRefresh").onclick = async () => {
   const b = $("#btnRefresh");
   const old = b.innerHTML;
-  b.innerHTML = '<span class="spin"></span> 刷新中…';
+  b.innerHTML = '<span class="spin"></span> 正在抓取最新热榜…';
   b.disabled = true;
+  const before = (DATA.articles || []).length;
   try {
-    // 重新拉数据（带时间戳破缓存）
-    const r = await fetch("data/articles.json?v=" + Date.now());
-    DATA = await r.json();
-    // 按更新时间从新到旧排序（collectedAt 越新越前）
-    (DATA.articles || []).sort((a, b) => {
-      const ta = a.collectedAt || a.publishedAt || "";
-      const tb = b.collectedAt || b.publishedAt || "";
-      return tb.localeCompare(ta);
+    // ① 优先：调 Edge Function 实时抓 tophub（真刷新）
+    const r = await fetch(CFG.fetch, { headers: { "Content-Type": "application/json" } });
+    if (!r.ok) throw new Error("采集服务返回 " + r.status);
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    if (!j.articles || !j.articles.length) throw new Error("未抓到数据");
+
+    const fresh = j.articles.map(a => ({ ...a, platform: a.platform || "微信" }));
+
+    // 与旧数据合并：保留旧数据里的封面/reprint 等补充字段
+    const oldMap = new Map((DATA.articles || []).map(a => [a.id, a]));
+    const merged = fresh.map(a => {
+      const o = oldMap.get(a.id);
+      return o ? { ...o, ...a, cover: a.cover || o.cover, reprint: o.reprint } : a;
     });
+
+    DATA.articles = merged;
+    DATA.updatedAt = j.updatedAt || DATA.updatedAt;
+    DATA.source = j.source || "tophub.today（实时）";
+
+    // 从新到旧排序
+    merged.sort((a, b) => (b.collectedAt || "").localeCompare(a.collectedAt || ""));
+
     renderStats(); renderFilters(); renderList(); renderAsRec();
-    $("#srcInfo").innerHTML = `已刷新 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
-    asMsg("sys", `已刷新热榜：${(DATA.articles || []).length} 篇，已按时间从新到旧排序。`);
+    const real = merged.filter(x => x.hasRealRead).length;
+    $("#srcInfo").innerHTML = `实时 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+    asMsg("sys", `✓ 实时刷新完成：${merged.length} 篇（${real} 篇真实阅读量），已按时间从新到旧排序。`);
   } catch (e) {
-    asMsg("sys", "刷新失败：" + esc(e.message) + "（静态站无法实时采集，需配合后端或 Actions 定时更新）");
+    // ② 降级：重新拉本地缓存（说明真实情况）
+    try {
+      const r2 = await fetch("data/articles.json?v=" + Date.now());
+      const j2 = await r2.json();
+      const oldLen = (DATA.articles || []).length;
+      DATA = j2;
+      (DATA.articles || []).sort((a, b) =>
+        (b.collectedAt || "").localeCompare(a.collectedAt || ""));
+      renderStats(); renderFilters(); renderList(); renderAsRec();
+      $("#srcInfo").innerHTML = `缓存 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+      asMsg("sys",
+        `⚠️ 实时采集未启用（${esc(e.message)}），已重新载入本地缓存。\n` +
+        `缓存数据时间：${(DATA.updatedAt || "未知").slice(0, 16)}（${oldLen} 篇）\n\n` +
+        `要让「手动刷新」真正抓最新数据，需要部署 fetch-hot 这个 Edge Function。`);
+    } catch (e2) {
+      asMsg("sys", "刷新失败：" + esc(e2.message));
+    }
   } finally {
     b.innerHTML = old; b.disabled = false;
   }
@@ -1615,6 +1804,7 @@ $("#qClear").onclick = () => {
 };
 
 updateAsSub();
+renderProfile();
 </script>
 
 <!-- 公众号排版弹窗 -->
