@@ -293,6 +293,14 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-mem{padding:10px 18px;border-bottom:1px solid var(--line);flex-shrink:0;background:#fbfcfe}
 .as-mem-t{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
 .as-mem-x{font-size:11.5px;color:var(--ink-2);line-height:1.6}
+.as-mem-hint{font-weight:400;color:var(--ink-3)}
+.as-mem-chips{display:flex;flex-wrap:wrap;gap:5px}
+.as-mem-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px 2px 8px;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:11px;
+  font-size:11.5px;color:var(--ink-2);cursor:pointer;line-height:1.5}
+.as-mem-chip:hover{border-color:var(--red);color:var(--red);background:var(--red-50)}
+.as-mem-chip b{font-weight:400;font-size:12px;opacity:.5}
+.as-mem-chip:hover b{opacity:1}
 .as-rec{padding:11px 18px;border-bottom:1px solid var(--line);flex-shrink:0;
   display:none;background:var(--bg-2)}
 .as-rec.on{display:block}
@@ -316,6 +324,38 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-msg .as-cmd{display:inline-block;margin-top:7px;padding:4px 10px;background:var(--blue);
   color:#fff;border-radius:6px;font-size:12px;cursor:pointer;border:none}
 .as-msg .as-cmd:hover{background:var(--blue-hover)}
+/* 助手回复的 Markdown 排版（标题/列表/加粗/分隔线/行内代码/引用/表格） */
+.as-msg .as-md{padding:2px 0}
+.as-msg .as-md>:first-child{margin-top:0}
+.as-msg .as-md>:last-child{margin-bottom:0}
+.as-msg .as-md h1,.as-msg .as-md h2,.as-msg .as-md h3,.as-msg .as-md h4{
+  margin:12px 0 6px;font-weight:650;line-height:1.4;color:var(--ink)}
+.as-msg .as-md h1{font-size:16px}
+.as-msg .as-md h2{font-size:15px}
+.as-msg .as-md h3{font-size:14px}
+.as-msg .as-md h4{font-size:13.5px;color:var(--ink-2)}
+.as-msg .as-md p{margin:6px 0}
+.as-msg .as-md ul,.as-msg .as-md ol{margin:6px 0;padding-left:22px}
+.as-msg .as-md li{margin:3px 0}
+.as-msg .as-md li>p{margin:2px 0}
+.as-msg .as-md ul ul,.as-msg .as-md ol ol,.as-msg .as-md ul ol,.as-msg .as-md ol ul{margin:2px 0}
+.as-msg .as-md strong{font-weight:650;color:var(--ink)}
+.as-msg .as-md em{font-style:normal;color:var(--blue)}
+.as-msg .as-md del{color:var(--ink-3)}
+.as-msg .as-md hr{margin:10px 0;border:none;border-top:1px solid var(--line)}
+.as-msg .as-md code{background:var(--bg-2);border:1px solid var(--line);border-radius:4px;
+  padding:1px 5px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace}
+.as-msg .as-md pre{background:var(--bg-2);border:1px solid var(--line);border-radius:7px;
+  padding:10px 12px;overflow-x:auto;margin:8px 0}
+.as-msg .as-md pre code{background:none;border:none;padding:0;font-size:12.5px;line-height:1.6}
+.as-msg .as-md blockquote{margin:8px 0;padding:2px 0 2px 11px;
+  border-left:3px solid var(--line-2);color:var(--ink-2)}
+.as-msg .as-md blockquote p{margin:3px 0}
+.as-msg .as-md a{color:var(--blue);text-decoration:underline}
+.as-msg .as-md table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px}
+.as-msg .as-md th,.as-msg .as-md td{border:1px solid var(--line);padding:5px 8px;text-align:left}
+.as-msg .as-md th{background:var(--bg-2);font-weight:600}
+.as-msg .as-md img{max-width:100%;border-radius:6px}
 .as-img-in{max-width:88%;align-self:flex-end;margin-bottom:-6px}
 .as-img-in img{width:110px;height:110px;object-fit:cover;border-radius:9px;
   border:1px solid var(--line)}
@@ -395,7 +435,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .modal-h .x{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:20px;
   line-height:1;padding:4px 8px;border-radius:6px}
 .modal-h .x:hover{background:var(--bg-2)}
-.modal-b{padding:0;overflow:auto;background:var(--bg-1)}
+.modal-b{padding:0;overflow:auto;background:var(--bg)}
 .ts-bar{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;
   gap:10px;flex-wrap:wrap;align-items:center;background:#fff}
 .ts-bar .sp{color:var(--ink-3);font-size:12px;margin-left:auto}
@@ -1414,56 +1454,99 @@ function profileNote(k, v) {
   p.updatedAt = Date.now();
   profileSave(p);
 }
-/* 让 AI 自己提炼一条长期记忆 */
+/* 让 AI 提炼长期记忆
+   防幻觉三条：
+   ① 只提炼「用户原话」，绝不给 AI 自己的回复做参考（幻觉全来自这里）
+   ② 用户没明说的字段一律不记，宁可少记
+   ③ 提炼结果标 inferred=true，界面上标「AI 推测」，可单条删除 */
 async function distillMemory(userText, aiText) {
+  if (!userText || !userText.trim()) return;   // 纯发图那轮不提炼
   try {
     const p = profile();
     const r = await fetch(CFG.api, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: AS.model, max_tokens: 200, temperature: 0.2,
+        model: AS.model, max_tokens: 200, temperature: 0,
         messages: [
           { role: "system", content:
-`从下面这轮对话里，提取值得长期记住的用户信息。只输出 JSON，不要任何解释。
-可提取的字段（没有就留空数组）：
-{"topics":["用户关注的题材"],"style":["偏好的写作风格"],"platforms":["常看的平台"],"goal":"用户想达到的目标","notes":["其他值得记的点"]}
-只记录明确提到的偏好，不要猜测。` },
-          { role: "user", content: `用户说：${userText}\n助手回：${String(aiText).slice(0, 400)}` },
+`你是记忆提炼器。从「用户说的话」里提取值得长期记住的信息。只输出 JSON，不要任何解释、不要客套。
+
+规则（严格遵守）：
+- 只提取用户在「用户说」部分明确表达过的信息。**不要根据助手回复去推断用户的身份、账号、职业、经历。**
+- 用户的原话里没有的信息，一律留空数组。不要"合理推测"，宁可什么都不记。
+- 每条不超过 12 个字。
+
+输出格式：
+{"topics":["关注的题材"],"style":["写作风格"],"platforms":["常看平台"],"goal":"创作目标","notes":["其他值得记的点"]}
+不确定就留空。` },
+          { role: "user", content: `用户说：${userText.slice(0, 500)}` },
         ],
       }),
     });
+    if (!r.ok) return;
     const j = await r.json();
     const t = (j.choices?.[0]?.message?.content || "").trim();
     const m = t.match(/\{[\s\S]*\}/);
     if (!m) return;
     const got = JSON.parse(m[0]);
+    // 清洗：去空白、限长、限量，丢掉过长的"整句话"（说明 AI 在瞎编）
+    const clean = (arr) => (Array.isArray(arr) ? arr
+      .map(x => String(x).trim())
+      .filter(x => x && x.length <= 12)
+      .slice(0, 12) : []);
     // 合并（去重、追加）
     const np = { ...p };
     for (const k of ["topics", "style", "platforms", "notes"]) {
-      if (Array.isArray(got[k]) && got[k].length) {
+      const v = clean(got[k]);
+      if (v.length) {
         const cur = Array.isArray(np[k]) ? np[k] : [];
-        np[k] = [...new Set([...cur, ...got[k]])].slice(0, 12);
+        np[k] = [...new Set([...cur, ...v])].slice(0, 12);
       }
     }
-    if (got.goal) np.goal = got.goal;
+    const goal = String(got.goal || "").trim();
+    if (goal && goal.length <= 30) np.goal = goal;
+
     np.updatedAt = Date.now();
     profileSave(np);
   } catch { /* 提炼失败不影响主流程 */ }
 }
 
-/* 渲染长期记忆到助手面板 */
+/* 渲染长期记忆到助手面板：每条可单独删，并标注是「你说过」还是「AI 推测」 */
 function renderProfile() {
   const p = profile();
   const box = $("#asProfile");
   if (!box) return;
-  const parts = [];
-  if (p.topics?.length) parts.push(`关注：${p.topics.join("、")}`);
-  if (p.style?.length) parts.push(`风格：${p.style.join("、")}`);
-  if (p.platforms?.length) parts.push(`常看：${p.platforms.join("、")}`);
-  if (p.goal) parts.push(`目标：${p.goal}`);
-  box.innerHTML = parts.length
-    ? `<div class="as-mem-t">🧠 我记得你</div><div class="as-mem-x">${esc(parts.join(" ｜ "))}</div>`
-    : `<div class="as-mem-t">🧠 长期记忆</div><div class="as-mem-x" style="color:var(--ink-3)">多聊几句，我会自动记住你的题材和风格偏好</div>`;
+  const chips = [];
+  const add = (k, v) => {
+    if (!v) return;
+    const t = String(v);
+    // data-k/data-v 用于删除时精确定位
+    chips.push(`<span class="as-mem-chip" data-k="${k}" data-v="${esc(t)}" title="点击删除这条记忆">${esc(t)}<b>×</b></span>`);
+  };
+  (p.topics || []).forEach(v => add("topics", v));
+  (p.style || []).forEach(v => add("style", v));
+  (p.platforms || []).forEach(v => add("platforms", v));
+  (p.notes || []).forEach(v => add("notes", v));
+  add("goal", p.goal);
+  if (!chips.length) {
+    box.innerHTML = `<div class="as-mem-t">🧠 长期记忆</div><div class="as-mem-x" style="color:var(--ink-3)">多聊几句，我会自动记住你的题材和风格偏好</div>`;
+    return;
+  }
+  box.innerHTML =
+    `<div class="as-mem-t">🧠 我记得你 <span class="as-mem-hint">（AI 可能记错，点标签可删）</span></div>` +
+    `<div class="as-mem-chips">${chips.join("")}</div>`;
+  // 绑定删除
+  box.querySelectorAll(".as-mem-chip").forEach(el => {
+    el.onclick = () => {
+      const k = el.dataset.k, v = el.dataset.v;
+      const np = { ...profile() };
+      if (k === "goal") { if (np.goal === v) delete np.goal; }
+      else if (Array.isArray(np[k])) np[k] = np[k].filter(x => x !== v);
+      np.updatedAt = Date.now();
+      profileSave(np);
+      asMsg("sys", `已忘掉「${v}」。`);
+    };
+  });
 }
 
 /* ── 自动存档：记录你看过的/点过的文章 ── */
@@ -1517,7 +1600,8 @@ function updateAsSub() {
 }
 function asMsg(role, html) {
   const d = document.createElement("div");
-  d.className = "as-msg " + role;
+  // 助手回复挂 as-md → 启用 markdown 排版样式
+  d.className = "as-msg " + role + (role === "a" ? " as-md" : "");
   d.innerHTML = html;
   $("#asLog").appendChild(d);
   $("#asLog").scrollTop = $("#asLog").scrollHeight;
@@ -1555,6 +1639,7 @@ function closeAs() {
 }
 
 /* ── 看图：支持 选文件 / Ctrl+V 粘贴 / 拖拽 ── */
+const AS_IMG_WARN = "图片读不出来（可能是微信表情/小程序截图这类特殊格式）。\n请换一张普通照片或截图（长图最好先裁一段），再发一次。";
 function addImageFile(f) {
   if (!f || !f.type.startsWith("image/")) return;
   if (AS.imgs.length >= 3) { alert("一次最多 3 张图"); return; }
@@ -1565,19 +1650,29 @@ function addImageFile(f) {
     img.onload = () => {
       const max = 1024;
       let { width: w, height: h } = img;
+      // 极小图（表情/图标/占位像素）后端读不了（会 400），直接拦下并给提示
+      if (Math.max(w, h) < 64) {
+        alert(AS_IMG_WARN);
+        if (!$("#asImgRow").children.length) renderAsImgs();
+        return;
+      }
       if (w > max || h > max) {
         const s = max / Math.max(w, h);
         w = Math.round(w * s); h = Math.round(h * s);
       }
       const cv = document.createElement("canvas");
       cv.width = w; cv.height = h;
-      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      const ctx = cv.getContext("2d");
+      // 透明 PNG 转 JPEG 会变黑底，先铺白底
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
       AS.imgs.push(cv.toDataURL("image/jpeg", 0.85));
       renderAsImgs();
     };
-    img.onerror = () => { AS.imgs.push(reader.result); renderAsImgs(); };
+    img.onerror = () => { alert(AS_IMG_WARN); };
     img.src = reader.result;
   };
+  reader.onerror = () => alert(AS_IMG_WARN);
   reader.readAsDataURL(f);
 }
 function pickImage() {
@@ -1655,18 +1750,43 @@ ${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题�
       temperature: 0.8,
     }),
   });
-  if (!r.ok) throw new Error("接口 " + r.status);
+  if (!r.ok) {
+    // 带上后端原因，好把技术错误翻译成人话
+    let detail = "";
+    try {
+      const ej = await r.json();
+      detail = (ej?.error?.message || ej?.message || ej?.error || "").toString().slice(0, 200);
+    } catch {}
+    const e = new Error("接口 " + r.status);
+    e.status = r.status; e.detail = detail; e.hadImg = AS.imgs.length > 0;
+    throw e;
+  }
   const j = await r.json();
   return (j.choices && j.choices[0].message.content || "").trim();
 }
 
-/* 渲染助手回复，把 [仿写:xxx] 变成可点按钮 */
+/* 渲染助手回复：把 [仿写:xxx] 变成可点按钮，并把 Markdown（##、**、列表）排版成 HTML */
 function renderAsReply(txt) {
-  let html = esc(txt);
   const cands = [];
-  html = html.replace(/\[仿写:([^\]]+)\]/g, (_, t) => {
+  // 先抽出 [仿写:xxx] 换成占位符，避免被 markdown 吞掉
+  let src = String(txt || "").replace(/\[仿写:([^\]]+)\]/g, (_, t) => {
     cands.push(t.trim()); return "@@ASPH@@";
   });
+  let html;
+  if (window.marked && marked.parse) {
+    // AI 输出不可信 → 白名单净化：禁掉 img/script/iframe 等可执行/可追踪元素
+    const box = document.createElement("div");
+    box.innerHTML = marked.parse(src, { breaks: true, gfm: true });
+    box.querySelectorAll("script,style,iframe,object,embed,form,input,button,img,video,audio,link,meta,svg").forEach(el => el.remove());
+    // 链接强制新窗口 + 断 opener，防 tab 劫持
+    box.querySelectorAll("a").forEach(a => {
+      a.setAttribute("target", "_blank");
+      a.setAttribute("rel", "noopener noreferrer");
+    });
+    html = box.innerHTML;
+  } else {
+    html = esc(src).replace(/\n/g, "<br>");
+  }
   html = html.split("@@ASPH@@").join("");
   let btnHtml = cands.length
     ? `<div style="margin-top:8px">${cands.map(t =>
@@ -1714,10 +1834,24 @@ async function sendAs() {
     renderAsRec();
   } catch (e) {
     tip.remove();
-    asMsg("a", `⚠️ 调用失败：${esc(e.message)}\n免费档限流约 20 次/分钟，稍等几秒再试。`);
+    asMsg("a", humanErr(e));
   } finally {
     AS.busy = false;
   }
+}
+
+/* 把技术错误翻译成人话（原来只显示"接口 400"，用户完全看不懂） */
+function humanErr(e) {
+  const st = e?.status || 0;
+  const d = e?.detail || "";
+  if (e?.hadImg && (st === 400 || /IMAGE data|image/i.test(d))) {
+    return `📷 图片这次没读出来 —— 可能是图片太小、太窄（长截图）或格式特殊。\n\n` +
+           `试一下：换一张普通照片，或者把长截图裁一段再发。仅凭文字描述我也能帮你。`;
+  }
+  if (st === 429) return `⏱ 请求太频繁了，免费档一分钟约 20 次。等十几秒再问一次就行。`;
+  if (st === 400) return `⚠️ 请求没被接受（400）。${d ? "\n\n原因：" + esc(d) : ""}`;
+  if (st >= 500) return `🔧 服务端开小差了（${st}），稍等一会儿重试。`;
+  return `⚠️ 调用失败：${esc(e?.message || "未知错误")}`;
 }
 
 /* ── 事件绑定 ── */

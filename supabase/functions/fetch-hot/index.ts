@@ -5,14 +5,33 @@
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+// 返回北京时区时间字符串（不能直接用 toISOString，那是 UTC，会比本地少 8 小时）
+function beijingNow(): string {
+  const d = new Date(Date.now() + 8 * 3600 * 1000);
+  return d.toISOString().slice(0, 19).replace("T", " ");
+}
+
 // (节点ID, 平台, 榜单名, 分类)
+// 全部节点均已实测可抓到数据（2026-10-06）
 const NODES: [string, string, string, string][] = [
   ["WnBe01o371", "微信", "微信24h热文榜", "公众号爆文"],
+  ["W1VdJPZoLQ", "微信", "微信今日视频榜", "视频爆款"],
   ["KMZd7VOvrO", "知乎", "知乎日报Today", "知乎"],
+  ["mproPpoq6O", "知乎", "知乎热榜", "知乎"],
   ["KqndgxeLl9", "微博", "微博热搜榜", "微博"],
   ["x9ozB4KoXb", "今日头条", "今日头条头条热榜", "头条"],
+  ["Jb0vmloB1G", "百度", "百度实时热点", "社会热点"],
+  ["Om4ejxvxEN", "百度贴吧", "百度贴吧热议榜", "社区热议"],
+  ["DpQvNABoNE", "抖音", "抖音总榜", "短视频"],
+  ["74KvxwokxM", "哔哩哔哩", "哔哩哔哩全站日榜", "视频爆款"],
   ["Q1Vd5Ko85R", "36氪", "36氪24小时热榜", "科技"],
   ["5VaobgvAj1", "虎嗅网", "虎嗅网热文", "科技"],
+  ["wWmoO5Rd4E", "澎湃", "澎湃热榜", "时政社会"],
+  ["DOvnNz1vEB", "机器之心", "机器之心", "AI科技"],
+  ["MZd7azPorO", "量子位", "量子位", "AI科技"],
+  ["Y2KeDGQdNP", "少数派", "少数派热门文章", "数码效率"],
+  ["4KvxEX0dkx", "微信读书", "微信读书总榜", "书单"],
+  ["mDOvnyBoEB", "豆瓣", "豆瓣电影新片榜", "影视娱乐"],
 ];
 
 const CATEGORY_RULES: [string, string[]][] = [
@@ -87,7 +106,7 @@ async function fetchNode(id: string, platform: string, board: string, cat: strin
         hasRealRead: hasReal,
         rank: i + 1,
         cover: cm ? cm[1] : "",
-        collectedAt: new Date().toISOString(),
+        collectedAt: beijingNow(),
       });
       i++;
     }
@@ -130,7 +149,7 @@ Deno.serve(async (req: Request) => {
 
     return new Response(JSON.stringify({
       articles: uniq,
-      updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+      updatedAt: beijingNow(),
       source: "tophub.today（实时）",
       count: uniq.length,
       realRead: uniq.filter(a => a.hasRealRead).length,
