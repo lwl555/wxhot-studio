@@ -1780,8 +1780,11 @@ function renderAsReply(txt) {
     box.querySelectorAll("script,style,iframe,object,embed,form,input,button,img,video,audio,link,meta,svg").forEach(el => el.remove());
     // 链接强制新窗口 + 断 opener，防 tab 劫持
     box.querySelectorAll("a").forEach(a => {
+      // 危险协议（javascript:/data:/vbscript:）直接摘掉 href，只留文字
+      const href = (a.getAttribute("href") || "").trim().toLowerCase();
+      if (/^(javascript:|data:|vbscript:|file:)/.test(href)) a.removeAttribute("href");
       a.setAttribute("target", "_blank");
-      a.setAttribute("rel", "noopener noreferrer");
+      a.setAttribute("rel", "noopener noreferrer nofollow");
     });
     html = box.innerHTML;
   } else {
