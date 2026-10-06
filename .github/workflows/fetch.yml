@@ -1,11 +1,18 @@
 name: 每日热榜采集
 
-# 每天自动抓取最新热榜并更新 articles.json
-# 时间：UTC 01:00 = 北京时间 09:00；UTC 10:00 = 北京时间 18:00
+# 自动抓取最新热榜并更新 articles.json
+# 注意：GitHub Actions 的 cron 用的是 UTC 时间，北京时间 = UTC+8
+# UTC 00,02,04,06,08,10,12 → 北京 08:00 / 10:00 / 12:00 / 14:00 / 16:00 / 18:00 / 20:00
+# 即白天每 2 小时更新一次，保证数据新鲜
 on:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 0 * * *'
+    - cron: '0 2 * * *'
+    - cron: '0 4 * * *'
+    - cron: '0 6 * * *'
+    - cron: '0 8 * * *'
     - cron: '0 10 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch:      # 支持在 GitHub 页面手动点「Run workflow」立即跑一次
 
 permissions:
@@ -41,7 +48,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/articles.json
-          git commit -m "chore: 自动更新热榜数据 $(date +'%Y-%m-%d %H:%M')"
+          git commit -m "chore: 自动更新热榜数据 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
           git push
 
       - name: 汇总结果

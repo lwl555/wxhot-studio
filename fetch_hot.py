@@ -20,6 +20,12 @@ import urllib.request
 import datetime
 import hashlib
 
+# GitHub Actions 的 runner 是 UTC 时区，直接用 now() 会比北京慢 8 小时。
+# 显式用 UTC+8，保证前端看到的时间和本地一致。
+BJ = datetime.timezone(datetime.timedelta(hours=8))
+def now_bj():
+    return datetime.datetime.now(BJ).strftime("%Y-%m-%d %H:%M:%S")
+
 CTX = ssl.create_default_context()
 CTX.check_hostname = False
 CTX.verify_mode = ssl.CERT_NONE
@@ -33,11 +39,23 @@ OUT_FILE = os.path.join(OUT_DIR, "articles.json")
 # 节点清单：(节点ID, 平台标签, 榜单名, 分类)
 NODES = [
     ("WnBe01o371", "微信", "微信24h热文榜", "公众号爆文"),
+    ("W1VdJPZoLQ", "微信", "微信今日视频榜", "视频爆款"),
     ("KMZd7VOvrO", "知乎", "知乎日报Today", "知乎"),
+    ("mproPpoq6O", "知乎", "知乎热榜", "知乎"),
     ("KqndgxeLl9", "微博", "微博热搜榜", "微博"),
     ("x9ozB4KoXb", "今日头条", "今日头条头条热榜", "头条"),
+    ("Jb0vmloB1G", "百度", "百度实时热点", "社会热点"),
+    ("Om4ejxvxEN", "百度贴吧", "百度贴吧热议榜", "社区热议"),
+    ("DpQvNABoNE", "抖音", "抖音总榜", "短视频"),
+    ("74KvxwokxM", "哔哩哔哩", "哔哩哔哩全站日榜", "视频爆款"),
     ("Q1Vd5Ko85R", "36氪", "36氪24小时热榜", "科技"),
     ("5VaobgvAj1", "虎嗅网", "虎嗅网热文", "科技"),
+    ("wWmoO5Rd4E", "澎湃", "澎湃热榜", "时政社会"),
+    ("DOvnNz1vEB", "机器之心", "机器之心", "AI科技"),
+    ("MZd7azPorO", "量子位", "量子位", "AI科技"),
+    ("Y2KeDGQdNP", "少数派", "少数派热门文章", "数码效率"),
+    ("4KvxEX0dkx", "微信读书", "微信读书总榜", "书单"),
+    ("mDOvnyBoEB", "豆瓣", "豆瓣电影新片榜", "影视娱乐"),
 ]
 
 # 关键词分类（按标题命中）
@@ -169,7 +187,7 @@ def parse_node(node_id, platform, board_name, category, rank_base=0):
             "rank": rank_base + idx + 1,
             "cover": cover,
             "desc": desc,
-            "collectedAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "collectedAt": now_bj(),
         })
 
     print(f"  [{platform}/{board_name}] 抓到 {len(items)} 条")
@@ -200,7 +218,7 @@ def main():
 
     os.makedirs(OUT_DIR, exist_ok=True)
     payload = {
-        "updatedAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updatedAt": now_bj(),
         "source": "tophub.today",
         "total": len(uniq),
         "withRealRead": sum(1 for i in uniq if i["hasRealRead"]),

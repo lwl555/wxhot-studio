@@ -732,6 +732,22 @@ const CFG = {
 };
 const DEMO_IMAGE = "data:image/svg+xml;utf8,";
 
+/* 时间显示：后端可能返回 UTC（Edge Function 旧版）或北京时间（静态数据/新版）。
+   若发现是 UTC（比本地早 7 小时以上），自动 +8 后再显示。 */
+function fixTz(s) {
+  if (!s) return "";
+  const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return String(s).slice(5, 16);
+  // 后端给的是"朴素时间"（无时区标记），按 UTC 解析
+  const utc = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`);
+  const localOffset = -new Date().getTimezoneOffset() / 60;   // 本地时区偏移，中国是 +8
+  const utcGuess = utc.getTime() + localOffset * 3600 * 1000;
+  const diffH = (utcGuess - Date.now()) / 3600000;
+  // 若换算后仍比"现在"早 7 小时以上，说明后端给的就是 UTC，需要再 +一次偏移
+  const t = new Date(utc.getTime() + (diffH < -7 ? localOffset * 3600 * 1000 : 0));
+  const p2 = n => String(n).padStart(2, "0");
+  return `${p2(t.getMonth() + 1)}-${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`;
+}
 let DATA = { articles: [], updatedAt: "", source: "" };
 let FILT = { plat: "全部", cat: "全部", real: false, q: "" };
 let CUR = null;
@@ -761,7 +777,7 @@ async function loadData() {
   renderStats();
   renderFilters();
   renderList();
-  $("#srcInfo").innerHTML = `更新 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+  $("#srcInfo").innerHTML = `更新 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
 }
 
 function renderStats() {
@@ -1924,7 +1940,7 @@ $("#btnRefresh").onclick = async () => {
 
     renderStats(); renderFilters(); renderList(); renderAsRec();
     const real = merged.filter(x => x.hasRealRead).length;
-    $("#srcInfo").innerHTML = `实时 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+    $("#srcInfo").innerHTML = `实时 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
     asMsg("sys", `✓ 实时刷新完成：${merged.length} 篇（${real} 篇真实阅读量），已按时间从新到旧排序。`);
   } catch (e) {
     // ② 降级：重新拉本地缓存（说明真实情况）
@@ -1936,7 +1952,7 @@ $("#btnRefresh").onclick = async () => {
       (DATA.articles || []).sort((a, b) =>
         (b.collectedAt || "").localeCompare(a.collectedAt || ""));
       renderStats(); renderFilters(); renderList(); renderAsRec();
-      $("#srcInfo").innerHTML = `缓存 <b>${(DATA.updatedAt || "").slice(5, 16)}</b> · ${DATA.source}`;
+      $("#srcInfo").innerHTML = `缓存 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
       asMsg("sys",
         `⚠️ 实时采集未启用（${esc(e.message)}），已重新载入本地缓存。\n` +
         `缓存数据时间：${(DATA.updatedAt || "未知").slice(0, 16)}（${oldLen} 篇）\n\n` +
