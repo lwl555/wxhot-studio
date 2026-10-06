@@ -753,6 +753,18 @@ const CFG = {
 };
 const DEMO_IMAGE = "data:image/svg+xml;utf8,";
 
+/* 数据新鲜度：把绝对时间换成"X 分钟前 / X 小时前"，一眼看出数据有多旧 */
+function agoText(s) {
+  const m = String(s || "").match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return "";
+  const t = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  const min = Math.round((Date.now() - t.getTime()) / 60000);
+  if (min < 1) return "刚刚";
+  if (min < 60) return min + " 分钟前";
+  const h = Math.floor(min / 60);
+  if (h < 24) return h + " 小时前";
+  return Math.floor(h / 24) + " 天前";
+}
 /* 时间显示：数据已是北京时间（GitHub Actions 脚本用 UTC+8 生成），直接显示。
     仅当后端返回的是 UTC 字符串（带 Z 或 T 结尾）时才 +8，避免重复加。 */
 function fixTz(s) {
@@ -809,7 +821,7 @@ async function loadData() {
   renderStats();
   renderFilters();
   renderList();
-  $("#srcInfo").innerHTML = `更新 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
+  $("#srcInfo").innerHTML = `更新 <b>${fixTz(DATA.updatedAt)}</b>（${agoText(DATA.updatedAt)}） · ${DATA.source}`;
 }
 
 function renderStats() {
@@ -865,12 +877,18 @@ function renderList() {
     <div class="card" data-id="${a.id}">
       <div class="rk">${i + 1}</div>
       ${(() => {
-        const phCols = ["#1d4ed8", "#0f766e", "#7c3aed", "#b45309", "#be185d", "#4d7c0f"];
+        // 占位块用渐变，别是死板的纯色（超过一半文章没有封面，这个块的观感很重要）
+        const phCols = [
+          ["#1d4ed8", "#3b82f6"], ["#0f766e", "#14b8a6"], ["#7c3aed", "#a78bfa"],
+          ["#b45309", "#f59e0b"], ["#be185d", "#f472b6"], ["#4d7c0f", "#84cc16"],
+        ];
         let h = 0; for (const ch of a.title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-        const phc = phCols[h % phCols.length];
+        const pair = phCols[h % phCols.length];
+        const phc = `linear-gradient(135deg, ${pair[0]}, ${pair[1]})`;
+        const solid = pair[0];
         const ch = (a.title.trim()[0] || "文");
         if (a.cover) {
-          return `<div class="cv cvw" style="background:${phc}"><img src="${esc(a.cover)}" referrerpolicy="no-referrer" onerror="this.remove();this.textContent='${esc(ch)}'" alt=""></div>`;
+          return `<div class="cv cvw" style="background:${solid}"><img src="${esc(a.cover)}" referrerpolicy="no-referrer" onerror="this.remove();this.textContent='${esc(ch)}'" alt=""></div>`;
         }
         return `<div class="cv cvw" style="background:${phc}" data-aid="${a.id}" data-tt="${esc(a.title.slice(0, 40))}">${esc(ch)}</div>`;
       })()}
@@ -2064,7 +2082,7 @@ $("#btnRefresh").onclick = async () => {
 
     renderStats(); renderFilters(); renderList(); renderAsRec();
     const real = merged.filter(x => x.hasRealRead).length;
-    $("#srcInfo").innerHTML = `实时 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
+    $("#srcInfo").innerHTML = `实时 <b>${fixTz(DATA.updatedAt)}</b>（${agoText(DATA.updatedAt)}） · ${DATA.source}`;
     asMsg("sys", `✓ 已载入最新热榜：${merged.length} 篇（${real} 篇真实阅读量）。
 数据每 2 小时自动更新一次。`);
   } catch (e) {
@@ -2077,7 +2095,7 @@ $("#btnRefresh").onclick = async () => {
       (DATA.articles || []).sort((a, b) =>
         (b.collectedAt || "").localeCompare(a.collectedAt || ""));
       renderStats(); renderFilters(); renderList(); renderAsRec();
-      $("#srcInfo").innerHTML = `缓存 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
+      $("#srcInfo").innerHTML = `缓存 <b>${fixTz(DATA.updatedAt)}</b>（${agoText(DATA.updatedAt)}） · ${DATA.source}`;
       asMsg("sys",
         `⚠️ 实时采集未启用（${esc(e.message)}），已重新载入本地缓存。\n` +
         `缓存数据时间：${(DATA.updatedAt || "未知").slice(0, 16)}（${oldLen} 篇）\n\n` +
@@ -2126,9 +2144,12 @@ const imgQueue = [];
 let imgRunning = false;
 let lastImgAt = 0;
 const IMG_GAP = 4000;          // 每张至少间隔 4s（免费档 20次/分）
+const COVER_BUDGET = 24;      // 一次最多给 24 张配图（全配 279 张要 18 分钟且耗额度）
+let coverMade = 0;
 function enqueueCover(el) {
   const title = el.dataset.tt;
   if (!title || el.dataset.done) return;
+  if (coverMade >= COVER_BUDGET) return;    // 超出预算就用渐变占位块，不再消耗额度
   el.dataset.done = "1";
   imgQueue.push({ el, title });
   runImgQueue();
@@ -2147,6 +2168,7 @@ async function runImgQueue() {
       el.innerHTML = `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer">`;
       el.style.opacity = "1";
       el.title = "AI 生成配图";
+      coverMade++;
     } catch (e) {
       el.style.opacity = "1";                 // 失败保留首字色块
       if (e.message === "RATE") {            // 限流则稍后重排队
