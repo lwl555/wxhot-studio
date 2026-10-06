@@ -1,20 +1,17 @@
 /* ════════════════════════════════════════════════════
    浏览器端 AIGC 检测（zhv3 模型，纯本地推理）
    - 模型在用户浏览器里跑，稿子不经过任何服务器
-   - 用 transformers.js v2（ESM，需动态 import）
+   - transformers.js v2.17.2：所有模型文件通过 env.remoteHost +
+     env.remotePathTemplate 拼接 URL（无 per-file 覆盖、无 files 选项），
+     所以把 remoteHost 指向我们自己的服务器即可彻底绕开 HuggingFace。
    ════════════════════════════════════════════════════ */
+
+// 模型只放在 GitHub Pages 上（国内可直连），无论网页还是 PC 端都从这里拉
 const AIGC = {
-  libBase: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
   esmUrl: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js",
-  // 模型文件放我们自己的站点（HuggingFace 在部分网络下不可达）
-  modelBase: (location.origin.startsWith("http://127.0.0.1") || location.protocol === "file:")
-    ? "../aigc-model/"                       // 本地开发
-    : "/wxhot-studio/aigc-model/",            // 线上（GitHub Pages 子路径）
-  files: {
-    "onnx/model_quantized.onnx": "model_quantized.onnx",
-    "tokenizer.json": "tokenizer.json",
-    "config.json": "config.json",
-  },
+  libBase: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+  // 模型根目录（HF 目录结构：<root>/custom/resolve/main/...）
+  modelBase: "https://lwl555.github.io/wxhot-studio/aigc-model/",
   loaded: false,
   loading: false,
   pipeline: null,
@@ -27,32 +24,20 @@ async function loadAIGC(onProgress) {
   AIGC.loading = true;
 
   try {
-    // transformers.js v2 是 ESM。普通 <script>（非 module）里不能直接写 import()，
-    // 用 new Function 构造让它在自己的模块作用域里执行。
-    const mod = await (new Function('u', 'return import(u)'))(AIGC.esmUrl);
+    // transformers.js v2 是 ESM，普通 <script> 里用 new Function + import() 动态加载
+    const mod = await (new Function("u", "return import(u)"))(AIGC.esmUrl);
     const { pipeline, env } = mod;
+
     env.allowLocalModels = false;
     env.useBrowserCache = true;
-    // 禁止浏览器端跨源拉模型（wasm/ort 文件）
+    // 关键：把所有模型文件请求重定向到我们自己的服务器，绕开 HuggingFace（这台机器不可达）
+    env.remoteHost = AIGC.modelBase;
+    env.remotePathTemplate = "{model}/resolve/{revision}/";
+    // ONNX 运行时 wasm 仍走 jsDelivr CDN（可达）
     env.backends.onnx.wasm.wasmPaths = AIGC.libBase + "/dist/";
 
-    const m = (f) => AIGC.modelBase + f;
-
-    // 关键：显式把 model/tokenizer/config 三个文件指到我们自己的服务器。
-    // 只靠 files 映射时，transformers.js 仍会去 HuggingFace 拉 tokenizer/config，
-    // 而 HF 在这台机器上不可达。显式覆盖项能彻底绕开它。
     AIGC.pipeline = await pipeline("text-classification", "custom", {
       quantized: true,
-      // 显式 URL 覆盖（最稳）
-      model: m("model_quantized.onnx"),
-      tokenizer: m("tokenizer.json"),
-      config: m("config.json"),
-      // files 映射兜底（覆盖 onnx 子路径）
-      files: {
-        "onnx/model_quantized.onnx": m("model_quantized.onnx"),
-        "tokenizer.json": m("tokenizer.json"),
-        "config.json": m("config.json"),
-      },
       progress_callback: (p) => {
         if (p.status === "progress" && p.total) {
           onProgress && onProgress(Math.round((p.loaded / p.total) * 100), p.file || "");
@@ -76,11 +61,12 @@ async function loadAIGC(onProgress) {
 async function detectSegment(text) {
   if (!AIGC.loaded) throw new Error("模型还没加载完");
   const out = await AIGC.pipeline(text, { top_k: 2 });
-  // 输出形如 [{label, score}, ...]，label 含 Human_Written / AI_Generated
+  // 输出形如 [{label, score}, ...]，label 来自 config.id2label
   let ai = 0, hu = 0;
   for (const r of out) {
-    if (/ai/i.test(r.label) && !/human/i.test(r.label)) ai = r.score;
-    else hu = r.score;
+    if (/AI/i.test(r.label) && !/human/i.test(r.label)) ai = r.score;
+    else if (/human/i.test(r.label)) hu = r.score;
+    else ai = Math.max(ai, r.score); // 兜底：LABEL_1 之类，取较高者
   }
   return { ai: Math.round(ai * 100), human: Math.round(hu * 100) };
 }
@@ -112,7 +98,7 @@ async function detectLongText(fullText, onSeg) {
     onSeg && onSeg(i + 1, segs.length, r.ai);
   }
 
-  // 汇总（按有效段加权平均）
+  // 汇总（有效段平均）
   const valid = results.filter(x => !x.skip);
   const overall = valid.length
     ? Math.round(valid.reduce((s, x) => s + x.ai, 0) / valid.length)
