@@ -36,12 +36,23 @@ async function loadAIGC(onProgress) {
     // 禁止浏览器端跨源拉模型（wasm/ort 文件）
     env.backends.onnx.wasm.wasmPaths = AIGC.libBase + "/dist/";
 
-    const files = {};
-    for (const [k, v] of Object.entries(AIGC.files)) files[k] = AIGC.modelBase + v;
+    const m = (f) => AIGC.modelBase + f;
 
+    // 关键：显式把 model/tokenizer/config 三个文件指到我们自己的服务器。
+    // 只靠 files 映射时，transformers.js 仍会去 HuggingFace 拉 tokenizer/config，
+    // 而 HF 在这台机器上不可达。显式覆盖项能彻底绕开它。
     AIGC.pipeline = await pipeline("text-classification", "custom", {
       quantized: true,
-      files,
+      // 显式 URL 覆盖（最稳）
+      model: m("model_quantized.onnx"),
+      tokenizer: m("tokenizer.json"),
+      config: m("config.json"),
+      // files 映射兜底（覆盖 onnx 子路径）
+      files: {
+        "onnx/model_quantized.onnx": m("model_quantized.onnx"),
+        "tokenizer.json": m("tokenizer.json"),
+        "config.json": m("config.json"),
+      },
       progress_callback: (p) => {
         if (p.status === "progress" && p.total) {
           onProgress && onProgress(Math.round((p.loaded / p.total) * 100), p.file || "");
