@@ -1708,7 +1708,7 @@ function renderAsImgs() {
 }
 
 /* ── 核心：调 3.0-flash（支持图文混排 + 三层记忆） ── */
-async function askAs(text) {
+async function askAs(text, imgs = []) {
   /* L1 事件记忆：最近读过的文章 */
   const arc = archive().slice(-12);
   const arcTxt = arc.length
@@ -1743,9 +1743,9 @@ ${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题�
 
   // 组装多模态消息：有图就带 image_url
   let content;
-  if (AS.imgs.length) {
+  if (imgs.length) {
     content = [{ type: "text", text: text || "请看这张图。" }];
-    AS.imgs.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
+    imgs.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
   } else {
     content = text;
   }
@@ -1774,7 +1774,7 @@ ${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题�
       detail = (ej?.error?.message || ej?.message || ej?.error || "").toString().slice(0, 200);
     } catch {}
     const e = new Error("接口 " + r.status);
-    e.status = r.status; e.detail = detail; e.hadImg = AS.imgs.length > 0;
+    e.status = r.status; e.detail = detail; e.hadImg = imgs.length > 0;
     throw e;
   }
   const j = await r.json();
@@ -1819,6 +1819,7 @@ async function sendAs() {
   const text = inp.value.trim();
   if ((!text && !AS.imgs.length) || AS.busy) return;
   AS.busy = true;
+  const pendingImgs = AS.imgs.slice();   // 先留底！下面 AS.imgs 会被清空
 
   if (AS.imgs.length) {
     const prev = document.createElement("div");
@@ -1837,7 +1838,7 @@ async function sendAs() {
   $("#asLog").scrollTop = $("#asLog").scrollHeight;
 
   try {
-    const rep = await askAs(text);
+    const rep = await askAs(text, pendingImgs);
     tip.remove();
     const { html, cands } = renderAsReply(rep);
     const m = asMsg("a", html);
