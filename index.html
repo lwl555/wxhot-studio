@@ -685,8 +685,6 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 /* ═══════════ 配置 ═══════════ */
 const CFG = {
   api: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/agnes-proxy/v1/chat/completions",
-  // 真·AIGC 检测（腾讯朱雀官方 API，走 Edge Function 隐藏密钥）
-  detect: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/aigc-detect",
   // 真·实时采集（tophub.today 公开免 key）
   fetch: "https://wcnssyiqitugqfmcbdhe.functions.supabase.co/fetch-hot",
   model: "agnes-2.0-flash",
@@ -1355,100 +1353,6 @@ $("#btnDet").onclick = async () => {
     btn.disabled = false; btn.textContent = "开始检测";
   }
 };
-
-/* 渲染真朱雀的分段结果 */
-function renderZhuque(j) {
-  const score = Math.round((j.score ?? 0) * 100);
-  const lv = score >= 70 ? { t: "高度疑似 AI", c: "var(--red)" }
-    : score >= 40 ? { t: "部分疑似 AI", c: "#b45309" }
-    : { t: "偏人工创作", c: "var(--green)" };
-  const ratio = j.ratio || {};
-  const segs = j.segments || [];
-  const bad = segs.filter(s => s.risk !== "human");
-
-  $("#detOut").innerHTML = `
-    <div class="det-sum">
-      <div class="det-sc" style="color:${lv.c}">${score}<small>%</small></div>
-      <div class="det-meta">
-        <div class="det-lv" style="color:${lv.c}">${lv.t}</div>
-        <div class="det-eng">${esc(j.engine || "朱雀")} · 整篇 AI 置信度</div>
-      </div>
-    </div>
-    <div class="det-bar">
-      <span style="width:${Math.round((ratio["0"] || 0) * 100)}%;background:var(--green)"></span>
-      <span style="width:${Math.round((ratio["2"] || 0) * 100)}%;background:#f59e0b"></span>
-      <span style="width:${Math.round((ratio["1"] || 0) * 100)}%;background:var(--red)"></span>
-    </div>
-    <div class="det-legend">
-      <span><i style="background:var(--green)"></i>人工 ${Math.round((ratio["0"] || 0) * 100)}%</span>
-      <span><i style="background:#f59e0b"></i>疑似 ${Math.round((ratio["2"] || 0) * 100)}%</span>
-      <span><i style="background:var(--red)"></i>AI ${Math.round((ratio["1"] || 0) * 100)}%</span>
-    </div>
-    ${bad.length ? `<div class="note"><b>${bad.length} 个段落被标记</b>，建议改写标红部分：</div>` : ""}
-    <div class="det-segs">
-      ${segs.map(s => `
-        <div class="det-seg ${s.risk}">
-          <div class="det-seg-h">
-            <span class="det-badge">${s.risk === "ai" ? "AI" : s.risk === "suspect" ? "疑似" : "人工"}</span>
-            <span class="det-cf">${Math.round((s.conf ?? 0) * 100)}%</span>
-          </div>
-          <div class="det-tx">${esc((s.text || "").slice(0, 120))}${(s.text || "").length > 120 ? "…" : ""}</div>
-        </div>`).join("")}
-    </div>`;
-}
-
-function renderDet(j) {
-  const conf = Math.round((j.confidence || 0) * 100);
-  const cls = conf <= 30 ? "lo" : conf <= 60 ? "mi" : "hi";
-  const txt = conf <= 30 ? "人味充足" : conf <= 60 ? "AI 味中等" : "AI 味偏重";
-  const segs = (j.segment_labels || []).map(s => {
-    const ai = s.label === 1;
-    return `<div class="seg-i ${ai ? "ai" : "hu"}">
-      <span class="seg-p ${ai ? "ai" : "hu"}">${ai ? "AI " + Math.round(s.conf * 100) + "%" : "真人"}</span>
-      <span class="seg-t">${esc(s.text)}</span></div>`;
-  }).join("");
-  $("#detOut").innerHTML = `
-    <div class="dres">
-      <div class="gauge ${cls}">${conf}%</div>
-      <div class="dinfo">
-        <div class="t">${txt}</div>
-        <div class="s">整体 AI 生成概率 ${conf}%。${conf > 30 ? "标红段落建议改写后再发布。" : "可以放心使用。"}
-        ${j.availableUses != null ? "<br>本 IP 剩余可用次数：" + j.availableUses : ""}</div>
-      </div>
-    </div>
-    ${segs ? `<div class="out-h" style="margin-bottom:10px"><span class="out-t">分段结果</span></div><div class="seg">${segs}</div>` : ""}`;
-}
-
-function heuristicDetect(text) {
-  // 前端启发式：统计 AI 腔调词密度 + 句长均匀度，仅供参考
-  const AI_WORDS = ["此外","不仅","至关重要","显著","综上","值得注意的是","不难发现","众所周知",
-    "随着…的发展","在当今","发挥着重要作用","提供了有力支撑"," deeply","进一步","与此同时",
-    "赋能","抓手","闭环","生态","范式","底层逻辑","方法论","颗粒度","对齐","势能"];
-  const found = AI_WORDS.filter(w => text.includes(w));
-  const sentences = text.split(/[。！？!?\n]/).filter(s => s.trim().length > 3);
-  const lens = sentences.map(s => s.length);
-  const avg = lens.reduce((a, b) => a + b, 0) / (lens.length || 1);
-  const variance = lens.reduce((a, b) => a + (b - avg) ** 2, 0) / (lens.length || 1);
-  const uniform = variance < 40;
-  let score = Math.min(88, 14 + found.length * 7 + (uniform ? 14 : 0));
-  const conf = score / 100;
-
-  const cls = conf <= .3 ? "lo" : conf <= .6 ? "mi" : "hi";
-  const txt = conf <= .3 ? "人味充足（参考）" : conf <= .6 ? "AI 味中等（参考）" : "AI 味偏重（参考）";
-  const hits = found.length ? found.map(w => `「${w}」`).join("、") : "未命中";
-
-  $("#heurOut").innerHTML = `
-    <div class="note info">以下是<b>前端启发式</b>结果，只看 AI 腔调词密度和句长均匀度，<b>不等同于朱雀检测结果</b>，只作参考。</div>
-    <div class="dres">
-      <div class="gauge ${cls}">${score}%</div>
-      <div class="dinfo">
-        <div class="t">${txt}</div>
-        <div class="s">命中 AI 腔调词：${esc(hits)}<br>
-        句长均匀度：${uniform ? "偏整齐（AI 味特征）" : "长短交错（正常）"}<br>
-        建议：${score > 60 ? "把上面命中的词换成人话，多加长短句交错" : "问题不大"}</div>
-      </div>
-    </div>`;
-}
 
 /* ═══════════ 导航 ═══════════ */
 $$("nav button").forEach(b => b.onclick = () => {
