@@ -732,21 +732,21 @@ const CFG = {
 };
 const DEMO_IMAGE = "data:image/svg+xml;utf8,";
 
-/* 时间显示：后端可能返回 UTC（Edge Function 旧版）或北京时间（静态数据/新版）。
-   若发现是 UTC（比本地早 7 小时以上），自动 +8 后再显示。 */
+/* 时间显示：数据已是北京时间（GitHub Actions 脚本用 UTC+8 生成），直接显示。
+    仅当后端返回的是 UTC 字符串（带 Z 或 T 结尾）时才 +8，避免重复加。 */
 function fixTz(s) {
   if (!s) return "";
-  const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
-  if (!m) return String(s).slice(5, 16);
-  // 后端给的是"朴素时间"（无时区标记），按 UTC 解析
-  const utc = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00Z`);
-  const localOffset = -new Date().getTimezoneOffset() / 60;   // 本地时区偏移，中国是 +8
-  const utcGuess = utc.getTime() + localOffset * 3600 * 1000;
-  const diffH = (utcGuess - Date.now()) / 3600000;
-  // 若换算后仍比"现在"早 7 小时以上，说明后端给的就是 UTC，需要再 +一次偏移
-  const t = new Date(utc.getTime() + (diffH < -7 ? localOffset * 3600 * 1000 : 0));
+  const t = String(s);
   const p2 = n => String(n).padStart(2, "0");
-  return `${p2(t.getMonth() + 1)}-${p2(t.getDate())} ${p2(t.getHours())}:${p2(t.getMinutes())}`;
+  // 明确带 Z 的 ISO 串 → 一定是 UTC
+  if (/Z$/.test(t)) {
+    const d = new Date(t);
+    if (!isNaN(d)) return `${p2(d.getMonth() + 1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+  }
+  const m = t.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return t.slice(5, 16);
+  // 已经是北京时间 → 原样输出（不猜、不加）
+  return `${m[2]}-${m[3]} ${m[4]}:${m[5]}`;
 }
 let DATA = { articles: [], updatedAt: "", source: "" };
 let FILT = { plat: "全部", cat: "全部", real: false, q: "" };
@@ -1915,8 +1915,8 @@ $("#btnRefresh").onclick = async () => {
   b.disabled = true;
   const before = (DATA.articles || []).length;
   try {
-    // ① 优先：调 Edge Function 实时抓 tophub（真刷新）
-    const r = await fetch(CFG.fetch, { headers: { "Content-Type": "application/json" } });
+    // ① 优先：拉静态数据（GitHub Actions 每 2 小时抓一次，已是北京时间且节点最全）
+    const r = await fetch("data/articles.json?v=" + Date.now());
     if (!r.ok) throw new Error("采集服务返回 " + r.status);
     const j = await r.json();
     if (j.error) throw new Error(j.error);
@@ -1941,7 +1941,8 @@ $("#btnRefresh").onclick = async () => {
     renderStats(); renderFilters(); renderList(); renderAsRec();
     const real = merged.filter(x => x.hasRealRead).length;
     $("#srcInfo").innerHTML = `实时 <b>${fixTz(DATA.updatedAt)}</b> · ${DATA.source}`;
-    asMsg("sys", `✓ 实时刷新完成：${merged.length} 篇（${real} 篇真实阅读量），已按时间从新到旧排序。`);
+    asMsg("sys", `✓ 已载入最新热榜：${merged.length} 篇（${real} 篇真实阅读量）。
+数据每 2 小时自动更新一次。`);
   } catch (e) {
     // ② 降级：重新拉本地缓存（说明真实情况）
     try {
