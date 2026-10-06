@@ -1,12 +1,15 @@
 /* ════════════════════════════════════════════════════
    浏览器端 AIGC 检测（zhv3 模型，纯本地推理）
    - 模型在用户浏览器里跑，稿子不经过任何服务器
-   - 需要先加载 transformers.js + ONNX 模型
+   - 用 transformers.js v2（ESM，需动态 import）
    ════════════════════════════════════════════════════ */
 const AIGC = {
-  libUrl: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
-  // 模型文件放我们自己的服务器（国内拉取快；HuggingFace 在部分网络下不可达）
-  modelBase: "https://lwl555.github.io/wxhot-studio/aigc-model/",
+  libBase: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+  esmUrl: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js",
+  // 模型文件放我们自己的站点（HuggingFace 在部分网络下不可达）
+  modelBase: (location.origin.startsWith("http://127.0.0.1") || location.protocol === "file:")
+    ? "../aigc-model/"                       // 本地开发
+    : "/wxhot-studio/aigc-model/",            // 线上（GitHub Pages 子路径）
   files: {
     "onnx/model_quantized.onnx": "model_quantized.onnx",
     "tokenizer.json": "tokenizer.json",
@@ -15,29 +18,23 @@ const AIGC = {
   loaded: false,
   loading: false,
   pipeline: null,
-  progress: 0,
 };
 
-/* 加载引擎 + 模型（首次约 98MB，之后走浏览器缓存） */
+/* 加载引擎 + 模型（首次约 100MB，之后走浏览器缓存） */
 async function loadAIGC(onProgress) {
   if (AIGC.loaded) return true;
   if (AIGC.loading) return false;
   AIGC.loading = true;
 
   try {
-    // 注入 transformers.js
-    if (!window.transformers) {
-      await new Promise((res, rej) => {
-        const s = document.createElement("script");
-        s.src = AIGC.libUrl + "/dist/transformers.min.js";
-        s.onload = res;
-        s.onerror = () => rej(new Error("检测引擎加载失败（jsDelivr 不可达）"));
-        document.head.appendChild(s);
-      });
-    }
-    const { pipeline, env } = window.transformers;
+    // transformers.js v2 是 ESM。普通 <script>（非 module）里不能直接写 import()，
+    // 用 new Function 构造让它在自己的模块作用域里执行。
+    const mod = await (new Function('u', 'return import(u)'))(AIGC.esmUrl);
+    const { pipeline, env } = mod;
     env.allowLocalModels = false;
     env.useBrowserCache = true;
+    // 禁止浏览器端跨源拉模型（wasm/ort 文件）
+    env.backends.onnx.wasm.wasmPaths = AIGC.libBase + "/dist/";
 
     const files = {};
     for (const [k, v] of Object.entries(AIGC.files)) files[k] = AIGC.modelBase + v;
@@ -47,8 +44,7 @@ async function loadAIGC(onProgress) {
       files,
       progress_callback: (p) => {
         if (p.status === "progress" && p.total) {
-          AIGC.progress = Math.round((p.loaded / p.total) * 100);
-          onProgress && onProgress(AIGC.progress, p.file || "");
+          onProgress && onProgress(Math.round((p.loaded / p.total) * 100), p.file || "");
         } else if (p.status === "ready") {
           onProgress && onProgress(100, "就绪");
         }
@@ -58,7 +54,7 @@ async function loadAIGC(onProgress) {
     return true;
   } catch (e) {
     console.error("AIGC 加载失败", e);
-    onProgress && onProgress(-1, e.message);
+    onProgress && onProgress(-1, e.message || String(e));
     throw e;
   } finally {
     AIGC.loading = false;
