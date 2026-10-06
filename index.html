@@ -589,8 +589,9 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     <!-- 检测 -->
     <div class="tp" id="tp-det">
       <div class="note">
-        <b>检测说明：</b>本平台接入腾讯朱雀 AIGC 检测（开源 CLI，本地/服务器运行），按段落给出 AI 生成概率。
-        单 IP 限流较严（约 36 次/小时），自用和小团队够用。需要更高并发要配代理池。
+        <b>检测说明：</b>检测在<b>你的浏览器里本地运行</b>（zhv3 中文模型），<b>稿子不会上传到任何服务器</b>。
+        首次使用需下载模型（约 98MB），之后走浏览器缓存很快。
+        模型每次最多读约 350 字，长文会自动分段检测并汇总。
       </div>
       <div class="fld">
         <label>待检测文本</label>
@@ -621,6 +622,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 </div>
 
 <script src="vendor/marked.umd.js"></script>
+<script src="aigc-browser.js"></script>
 <!-- ═══ 同步弹窗（与 PC 端互相同步） ═══ -->
 <div class="mask hide" id="syncMask" onclick="if(event.target===this)this.classList.add('hide')">
   <div class="modal" style="width:min(520px,100%)">
@@ -1327,35 +1329,29 @@ $("#btnDet").onclick = async () => {
   const mode = $("#detSrc").value;
   const text = mode === "rw" ? RWTEXT : $("#detCustom").value.trim();
   if (!text) { alert("没有可检测的文本"); return; }
-  if (text.replace(/\s/g, "").length < 200) { alert("文本不足 200 字，朱雀检测有最低长度要求"); return; }
+  if (text.replace(/\s/g, "").length < 50) { alert("文本不足 50 字"); return; }
 
   const btn = $("#btnDet");
-  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 检测中…`;
-  $("#detOut").innerHTML = `<div class="note info">正在送检，朱雀检测通常 5~15 秒…</div>`;
+  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 准备中…`;
 
   try {
-    // 优先调真·朱雀（Edge Function），不可用则降级启发式
-    let used = "zhuque";
-    let r = await fetch(CFG.detect, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (!r.ok) {
-      used = "heuristic";
-      throw new Error("朱雀后端未就绪");
+    if (!AIGC.loaded) {
+      btn.innerHTML = `<span class="spin"></span> 下载模型…`;
+      $("#detOut").innerHTML = `<div class="note info">正在下载检测模型（约 98MB，首次较慢；之后走浏览器缓存就很快了）</div>`;
+      await loadAIGC((p, file) => {
+        if (p < 0) { $("#detOut").innerHTML = `<div class="note"><b>模型加载失败</b><br>${esc(file)}</div>`; return; }
+        $("#detOut").innerHTML = `<div class="note info">正在加载检测模型… ${p}%${file ? `（${esc(file)}）` : ""}</div>`;
+      });
     }
-    const j = await r.json();
-    if (!j.ok) throw new Error(j.error || "检测失败");
-    renderZhuque(j);
-    btn.disabled = false; btn.textContent = "开始检测";
-    return;
+    btn.innerHTML = `<span class="spin"></span> 检测中…`;
+    $("#detOut").innerHTML = `<div class="note info">正在分段检测…</div>`;
+    const data = await detectLongText(text, (i, n, ai) => {
+      $("#detOut").innerHTML = `<div class="note info">正在检测第 ${i}/${n} 段…（当前段 AI 概率 ${ai}%）</div>`;
+    });
+    renderAIGCResult(data);
   } catch (e) {
-    // 降级：前端启发式（明确告知不是真朱雀）
-    $("#detOut").innerHTML = `<div class="note">
-      <b>朱雀后端暂未接入</b>（${esc(e.message)}），以下是<b>前端启发式估算</b>——
-      只统计 AI 腔调词密度与句长均匀度，<b>不等同于朱雀</b>，仅供参考。
-    </div><div id="heurOut" style="margin-top:14px"></div>`;
-    heuristicDetect(text);
+    $("#detOut").innerHTML = `<div class="note"><b>检测失败</b><br>${esc(e.message)}</div>`;
+  } finally {
     btn.disabled = false; btn.textContent = "开始检测";
   }
 };
