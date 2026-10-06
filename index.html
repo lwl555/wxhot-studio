@@ -441,6 +441,11 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .ts-bar .sp{color:var(--ink-3);font-size:12px;margin-left:auto}
 .ts-prev{padding:24px 28px;background:#fff;min-height:240px}
 .ts-prev:empty::before{content:"点击左侧按钮生成排版预览";color:var(--ink-3);font-size:13px}
+.toast{position:fixed;right:18px;bottom:18px;z-index:999;background:var(--ink);color:#fff;
+  padding:9px 15px;border-radius:8px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.18);
+  opacity:0;transform:translateY(8px);transition:.22s;pointer-events:none;max-width:70vw}
+.toast.on{opacity:1;transform:translateY(0)}
+
 /* 公众号商务蓝主题（也会被注入到复制的 HTML 中） */
 .wx-theme{font-size:16px;color:#2b2b2b;line-height:1.85;
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
@@ -558,11 +563,17 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
         <div class="fld">
           <label>目标字数</label>
           <select id="rwLen">
+            <option value="origin">跟原文一样（<span id="rwLenOrigin">—</span> 字）</option>
             <option value="800">800 字</option>
             <option value="1200" selected>1200 字</option>
             <option value="1800">1800 字</option>
             <option value="2500">2500 字</option>
+            <option value="custom">自己填…</option>
           </select>
+          <input id="rwLenCustom" type="number" min="200" max="8000" step="100"
+                 placeholder="输入字数，例如 3000"
+                 style="display:none;margin-top:6px;width:100%;padding:8px 11px;
+                 border:1px solid var(--line);border-radius:7px;font-size:13px">
         </div>
         <div class="fld">
           <label>去 AI 味强度</label>
@@ -572,6 +583,12 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
             <option value="light">轻（仅微调）</option>
           </select>
         </div>
+      </div>
+      <div class="fld">
+        <label>参考原文（可选，粘进来仿写更贴题，也能按它的字数仿写）</label>
+        <textarea id="rwSrc" style="min-height:120px"
+          placeholder="把参考文章的正文粘这里。留空则只按标题仿写（平台热榜只存标题，没有正文）。"></textarea>
+        <div class="hint" id="rwSrcInfo">未粘贴原文 · 仅按标题仿写</div>
       </div>
       <div class="fld">
         <label>额外要求（可选）</label>
@@ -586,7 +603,11 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
       </div>
       <div class="out-h">
         <span class="out-t">仿写结果</span>
-        <span class="cnts" id="rwCnt">0 字</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="cnts" id="rwCnt">0 字</span>
+          <button class="btn btn-g btn-sm" id="btnRwCopy" title="复制纯文字（可直接粘到公众号）">📋 复制文字</button>
+          <button class="btn btn-g btn-sm" id="btnRwCopyWx" title="复制带排版格式">复制公众号格式</button>
+        </span>
       </div>
       <div class="out empty" id="rwOut">点「开始仿写」，AI 会读取原文重新写一篇</div>
       <div class="rw-illu" id="rwImgBar"></div>
@@ -1019,22 +1040,26 @@ async function doRewrite(regen) {
   $("#rwOut").className = "out empty";
   $("#rwOut").textContent = regen ? "换一版中，通常 10~20 秒…" : "AI 正在读原文并重写，通常 10~20 秒…";
 
-  const len = $("#rwLen").value;
+  const len = targetWords();
   const style = STYLE_MAP[$("#rwStyle").value];
   const human = HUMAN_MAP[$("#rwHuman").value];
   const extra = $("#rwExtra").value.trim();
+  const srcTxt = ($("#rwSrc").value || "").trim();
   const seed = regen ? `\n\n【重要】这是第 ${Math.floor(Math.random() * 900 + 100)} 次重写，必须换完全不同的开头方式和例证，不要与上一版雷同。` : "";
+  // 粘了原文就按原文仿写（更贴题），没粘就只按标题
+  const refBlock = srcTxt
+    ? `【参考文章正文】（${srcTxt.replace(/\s/g, "").length} 字）\n${srcTxt.slice(0, 6000)}\n\n【仿写要求】参考上面的立意、结构与节奏，但换成新的表达和例证，不要照抄句子。`
+    : `【参考文章标题】\n${CUR.title}\n\n（没有拿到原文正文，请根据标题自行展开立意和结构。）`;
 
   const prompt = `你是一位资深公众号编辑。现在要仿写一篇参考文章。
 
-【参考文章标题】
-${CUR.title}
+${refBlock}
 
 【你的任务】
 ${style}
 
 【字数要求】
-约 ${len} 字，不要少于 ${Math.round(len * 0.8)} 字。
+正文严格控制在 ${len} 字左右，允许 ±10%，不要少于 ${Math.round(len * 0.8)} 字、也不要超过 ${Math.round(len * 1.2)} 字。请写足篇幅，不要偷懒缩短。
 
 【写作风格要求】
 ${human}
@@ -1288,6 +1313,93 @@ function rwMdWithImages() {
     return src ? `\n\n![](${src})\n\n` : `\n\n*[此处配图：${prompt.trim()}（尚未生成）]*\n\n`;
   });
 }
+
+/* 轻量提示（右下角浮出，2 秒消失），替代 alert 不打断操作 */
+function toast(msg) {
+  let el = $(".toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add("on");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("on"), 2200);
+}
+
+/* ── 复制仿写稿：现代 API 直写剪贴板，失败回落 execCommand ── */
+function copyText(text, tip) {
+  if (!text) { alert("还没有仿写内容"); return; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text)
+      .then(() => toast(tip || "已复制"))
+      .catch(() => fallbackCopy(text, tip));
+  } else fallbackCopy(text, tip);
+}
+function fallbackCopy(text, tip) {
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); toast(tip || "已复制"); }
+  catch (e) { alert("复制失败，请手动在结果区框选复制"); }
+  document.body.removeChild(ta);
+}
+/* 复制仿写纯文字：去掉配图标记，保留干净正文 */
+$("#btnRwCopy").onclick = () => {
+  const t = (RWTEXT || "").replace(/\[配图:[^\]]*\]/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  copyText(t, `已复制 ${t.replace(/\s/g, "").length} 字，去公众号粘贴即可`);
+};
+/* 复制公众号格式（带排版） */
+$("#btnRwCopyWx").onclick = () => {
+  const md = RWTEXT || "";
+  if (!md) { alert("先生成仿写稿再复制"); return; }
+  const full = `<!doctype html><html><head><meta charset="utf-8"><style>${WX_THEME_CSS}</style></head><body>${typesetHTML(md)}</body></html>`;
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([
+      new ClipboardItem({ "text/html": new Blob([full], { type: "text/html" }),
+                          "text/plain": new Blob([md], { type: "text/plain" }) })
+    ]).then(() => toast("已复制公众号格式，Ctrl+V 样式自动带上"))
+      .catch(() => fallbackCopy(full, "已复制公众号格式"));
+  } else fallbackCopy(full, "已复制公众号格式");
+};
+
+/* ── 字数：跟原文 / 预设 / 自定义 ── */
+function srcWords() {
+  return ($("#rwSrc")?.value || "").replace(/\s/g, "").length;
+}
+function targetWords() {
+  const v = $("#rwLen").value;
+  if (v === "custom") {
+    const n = parseInt($("#rwLenCustom").value, 10);
+    if (!n || isNaN(n)) return 1200;
+    return Math.min(8000, Math.max(200, n));        // 夹在 200~8000，防填错
+  }
+  if (v === "origin") {
+    const w = srcWords();
+    // 没粘原文时，回落成"跟上一版仿写一样"；再没有就 1200
+    if (w > 0) return w;
+    return RWTEXT ? RWTEXT.replace(/\s/g, "").length : 1200;
+  }
+  return parseInt(v, 10) || 1200;
+}
+/* 字数下拉联动 + 原文输入联动 */
+function syncLenUI() {
+  const v = $("#rwLen").value;
+  const box = $("#rwLenCustom");
+  if (box) box.style.display = (v === "custom") ? "" : "none";
+  const n = srcWords();
+  const label = $("#rwLenOrigin");
+  if (label) label.textContent = n > 0 ? n : "—";
+  const info = $("#rwSrcInfo");
+  if (info) {
+    info.textContent = n > 0
+      ? `已粘贴 ${n} 字 · 选「跟原文一样」就按这个长度写`
+      : "未粘贴原文 · 仅按标题仿写";
+  }
+}
+$("#rwLen").onchange = syncLenUI;
+$("#rwSrc").oninput = syncLenUI;
 function downloadMd() { dl("仿写稿.md", rwMdWithImages(), "text/markdown"); }
 
 $("#btnHumanize").onclick = humanizePass;
