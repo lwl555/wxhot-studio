@@ -121,6 +121,16 @@ def clean_url(u):
     return u.split("#")[0]
 
 
+
+def fix_cover(u):
+    """封面统一 https：网页部署在 HTTPS 下，http 图片会被浏览器拦截（Mixed Content）"""
+    if not u:
+        return ""
+    u = u.strip()
+    if u.startswith("http://"):
+        return "https://" + u[len("http://"):]
+    return u
+
 def parse_node(node_id, platform, board_name, category, rank_base=0):
     """解析单个 tophub 节点"""
     page = fetch(f"https://tophub.today/n/{node_id}")
@@ -185,7 +195,7 @@ def parse_node(node_id, platform, board_name, category, rank_base=0):
             "readCountText": (w.group(1).strip() if w else "—"),
             "hasRealRead": has_real_read,
             "rank": rank_base + idx + 1,
-            "cover": cover,
+            "cover": fix_cover(cover),
             "desc": desc,
             "collectedAt": now_bj(),
         })
