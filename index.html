@@ -769,6 +769,16 @@ function fixTz(s) {
   // 已经是北京时间 → 原样输出（不猜、不加）
   return `${m[2]}-${m[3]} ${m[4]}:${m[5]}`;
 }
+/* 封面协议修正：HTTPS 页面里加载 http:// 图片会被浏览器拦截（Mixed Content），
+   统一升级成 https；升级后仍加载不了的，由 onerror 回落色块。 */
+function fixCover(u) {
+  if (!u) return "";
+  return String(u).replace(/^http:\/\//i, "https://");
+}
+function fixCovers(list) {
+  (list || []).forEach(a => { if (a.cover) a.cover = fixCover(a.cover); });
+  return list;
+}
 let DATA = { articles: [], updatedAt: "", source: "" };
 let FILT = { plat: "全部", cat: "全部", real: false, q: "" };
 let CUR = null;
@@ -791,6 +801,7 @@ async function loadData() {
   try {
     const r = await fetch("data/articles.json?v=" + Date.now());
     DATA = await r.json();
+    fixCovers(DATA.articles);   // http:// 封面在 HTTPS 页面会被拦截，统一升级
   } catch (e) {
     $("#list").innerHTML = `<div class="empty-tip"><div class="t">数据加载失败</div><div class="s">请确认 data/articles.json 存在（运行 python fetch_hot.py 生成）</div></div>`;
     return;
@@ -2035,7 +2046,7 @@ $("#btnRefresh").onclick = async () => {
     if (j.error) throw new Error(j.error);
     if (!j.articles || !j.articles.length) throw new Error("未抓到数据");
 
-    const fresh = j.articles.map(a => ({ ...a, platform: a.platform || "微信" }));
+    const fresh = fixCovers(j.articles.map(a => ({ ...a, platform: a.platform || "微信" })));
 
     // 与旧数据合并：保留旧数据里的封面/reprint 等补充字段
     const oldMap = new Map((DATA.articles || []).map(a => [a.id, a]));
