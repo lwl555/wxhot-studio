@@ -413,7 +413,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   nav{display:flex;order:3;width:100%;margin-top:2px}
   nav button{flex:1;text-align:center;padding:9px 6px}
   /* 状态栏（更新时间）加高：13px 字号 + 充足内边距，不再挤压 */
-  .src{font-size:13px;line-height:1.55;padding:8px 11px}
+  .hd-r .src{font-size:13px;line-height:1.55;padding:8px 11px}
   .card{padding:12px;gap:10px}
   .cv{width:56px;height:42px}
   .bd{flex:1 1 calc(100% - 26px - 56px - 10px)}
@@ -430,7 +430,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   .imgs{grid-template-columns:1fr 1fr}
   /* 聊天：输入区加大触控面积，消息字号提升 */
   .as-in{padding:12px 14px}
-  .as-in input{font-size:16px;padding:11px 12px}   /* ≥16px 防 iOS 聚焦缩放 */
+  #asInput{font-size:16px;padding:11px 12px}   /* ≥16px 防 iOS 聚焦自动放大 */
   .as-send{padding:11px 18px;font-size:14px}
   .as-msg{font-size:14.5px;line-height:1.65}
   .as-imgbtn{padding:11px 13px}
