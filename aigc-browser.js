@@ -6,10 +6,10 @@
      所以把 remoteHost 指向我们自己的服务器即可彻底绕开 HuggingFace。
    ════════════════════════════════════════════════════ */
 
-// 模型只放在 GitHub Pages 上（国内可直连），无论网页还是 PC 端都从这里拉
+// 全部自托管在 GitHub Pages 上（jsDelivr 在大陆经常不可达，曾导致检测加载失败）
 const AIGC = {
-  esmUrl: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js",
-  libBase: "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+  esmUrl: "https://lwl555.github.io/wxhot-studio/vendor/tfjs/transformers.min.js",
+  libBase: "https://lwl555.github.io/wxhot-studio/vendor/tfjs/",
   // 模型根目录（HF 目录结构：<root>/custom/resolve/main/...）
   modelBase: "https://lwl555.github.io/wxhot-studio/aigc-model/",
   loaded: false,
