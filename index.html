@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>热文创作台 · 真实热榜爆文仿写平台</title>
+<title>林的创作平台 · 热榜爆文仿写</title>
 <style>
 :root{
   --blue:#1d4ed8; --blue-hover:#1e40af; --blue-50:#eff6ff; --blue-100:#dbeafe;
@@ -391,26 +391,33 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-hint{font-size:10.5px;color:var(--ink-3);margin-top:7px;line-height:1.5}
 
 @media(max-width:820px){
-  .hd{padding:0 16px;gap:14px;height:auto;min-height:56px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
-  .wrap{padding:18px 16px 60px}
+  /* 顶栏：logo 一行、状态信息一行、按钮一行，行高舒展不挤压 */
+  .hd{padding:10px 16px 12px;gap:10px;flex-wrap:wrap}
+  .logo{font-size:17px}
+  .hd-r{width:100%;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto}
+  .hd-r .src{flex:0 0 auto;max-width:52%;font-size:12px;line-height:1.5;padding:7px 10px;
+    background:var(--bg-2);border-radius:8px}
+  .hd-r button{flex:0 0 auto;white-space:nowrap}
+  .wrap{padding:14px 14px 60px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .row{grid-template-columns:1fr}
-  /* 卡片：允许换行，.aim 独占一行，不再挤压标题 */
   .card{padding:14px;gap:12px;flex-wrap:wrap}
   .cv{width:72px;height:52px}
   .bd{flex:1 1 calc(100% - 26px - 72px - 12px)}
   .aim{margin-left:0;width:100%;order:3;padding-top:2px}
+  /* 聊天面板：手机上全屏，消息区占满 */
+  .as-panel{width:100vw;right:0;border-radius:0}
+  .as-head{padding:12px 16px}
 }
 @media(max-width:560px){
   nav{display:flex;order:3;width:100%;margin-top:2px}
-  nav button{flex:1;text-align:center;padding:8px 6px}
-  .hd-r{width:100%;order:2}
-  .src{font-size:11px}
+  nav button{flex:1;text-align:center;padding:9px 6px}
+  /* 状态栏（更新时间）加高：13px 字号 + 充足内边距，不再挤压 */
+  .src{font-size:13px;line-height:1.55;padding:8px 11px}
   .card{padding:12px;gap:10px}
   .cv{width:56px;height:42px}
   .bd{flex:1 1 calc(100% - 26px - 56px - 10px)}
   .tt{font-size:14px}
-  /* 抽屉在窄屏全屏铺满 */
   .dw{width:100vw}
   .dw-h{padding:14px 16px;gap:10px}
   .dw-h h2{font-size:15px}
@@ -421,6 +428,12 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   .dres{flex-direction:column;text-align:center;gap:10px}
   .dinfo{text-align:left}
   .imgs{grid-template-columns:1fr 1fr}
+  /* 聊天：输入区加大触控面积，消息字号提升 */
+  .as-in{padding:12px 14px}
+  .as-in input{font-size:16px;padding:11px 12px}   /* ≥16px 防 iOS 聚焦缩放 */
+  .as-send{padding:11px 18px;font-size:14px}
+  .as-msg{font-size:14.5px;line-height:1.65}
+  .as-imgbtn{padding:11px 13px}
 }
 
 /* ═══ 排版弹窗 ═══ */
@@ -469,16 +482,49 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .wx-theme code{background:#eef2ff;color:#4338ca;padding:2px 6px;border-radius:4px;
   font-size:14px}
 .wx-theme pre code{background:transparent;color:inherit;padding:0}
+
+/* ═══ 效率页（记账+任务+报表）═══ */
+.eff-tabs{display:flex;gap:8px;margin-bottom:16px}
+.eff-tabs button{padding:9px 18px;border:1px solid var(--line);background:#fff;border-radius:8px;
+  cursor:pointer;font-size:14px;color:var(--ink-2)}
+.eff-tabs button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ef-b{display:none}.ef-b.on{display:block}
+.ld-form{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.ld-form select,.ld-form input{padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+.ld-form #ldAmt{width:110px}.ld-form #ldCat{width:150px}.ld-form #ldNote{flex:1;min-width:140px}
+.ld-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:8px;margin-bottom:8px;background:#fff}
+.ld-row .ld-c{font-size:12px;color:var(--ink-2);background:var(--bg-2);padding:2px 8px;border-radius:10px}
+.ld-row .ld-n{flex:1;font-size:13.5px}
+.ld-row .ld-amt{font-weight:650;font-size:14px}
+.ld-row .ld-amt.in{color:var(--green)}.ld-row .ld-amt.out{color:var(--red)}
+.ld-row .ld-x{border:none;background:none;color:var(--ink-3);cursor:pointer;font-size:15px;padding:0 4px}
+.ld-row .ld-x:hover{color:var(--red)}
+.ld-list-h{display:flex;align-items:center;justify-content:space-between;margin:14px 0 10px}
+.tk-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);
+  border-radius:8px;margin-bottom:8px;background:#fff}
+.tk-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--blue);cursor:pointer}
+.tk-row .tk-t{flex:1;font-size:13.5px}
+.tk-row.done .tk-t{text-decoration:line-through;color:var(--ink-3)}
+.tk-row .tk-scope{font-size:11px;color:var(--blue);background:var(--blue-50);padding:2px 8px;border-radius:10px}
+.tk-sec{font-weight:650;font-size:13.5px;color:var(--ink-2);margin:14px 0 8px}
+.rp-btns{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+@media(max-width:560px){
+  .ld-form{flex-direction:column}
+  .ld-form select,.ld-form input{width:100%!important}
+  .ld-form .btn{width:100%}
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="hd">
-    <div class="logo"><div class="logo-mk">热</div>热文创作台</div>
+    <div class="logo"><div class="logo-mk">林</div>林的创作平台</div>
     <nav>
       <button class="on" data-pg="board">热榜</button>
       <button data-pg="mine">我的作品</button>
+      <button data-pg="eff">效率</button>
     </nav>
     <div class="hd-r">
       <span class="src" id="srcInfo">数据源 —</span>
@@ -521,6 +567,64 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     </div>
 
     <div class="lst" id="list"></div>
+  </div>
+
+  <!-- ═══ 效率页：记账 + 任务 ═══ -->
+  <div class="page" id="pg-eff">
+    <div class="eff-tabs">
+      <button class="on" data-ef="ledger">💰 记账</button>
+      <button data-ef="tasks">✅ 任务</button>
+      <button data-ef="report">📊 报表</button>
+    </div>
+
+    <!-- 记账 -->
+    <div class="ef-b on" id="ef-ledger">
+      <div class="stats">
+        <div class="stat"><div class="k">今日收入</div><div class="v" style="color:var(--green)" id="ldIn">0</div></div>
+        <div class="stat"><div class="k">今日支出</div><div class="v" style="color:var(--red)" id="ldOut">0</div></div>
+        <div class="stat"><div class="k">本月结余</div><div class="v" id="ldBal">0</div></div>
+        <div class="stat"><div class="k">本月笔数</div><div class="v" id="ldCnt">0</div></div>
+      </div>
+      <div class="ld-form">
+        <select id="ldType"><option value="in">收入</option><option value="out">支出</option></select>
+        <input id="ldAmt" type="number" min="0.01" step="0.01" placeholder="金额 ¥">
+        <input id="ldCat" list="ldCatList" placeholder="分类（如 工资/稿费/餐费）">
+        <datalist id="ldCatList"></datalist>
+        <input id="ldNote" placeholder="备注（可选）">
+        <button class="btn btn-p" id="ldAdd">记一笔</button>
+      </div>
+      <div class="ld-list-h"><span class="out-t">流水（最近 30 条）</span>
+        <button class="btn btn-g btn-sm" id="ldExport">导出 CSV</button></div>
+      <div id="ldList"></div>
+    </div>
+
+    <!-- 任务 -->
+    <div class="ef-b" id="ef-tasks">
+      <div class="stats">
+        <div class="stat"><div class="k">今日待办</div><div class="v" id="tkToday">0</div></div>
+        <div class="stat"><div class="k">已完成</div><div class="v" style="color:var(--green)" id="tkDone">0</div></div>
+        <div class="stat"><div class="k">本月任务</div><div class="v" id="tkMonth">0</div></div>
+        <div class="stat"><div class="k">完成率</div><div class="v" id="tkRate">—</div></div>
+      </div>
+      <div class="ld-form">
+        <select id="tkScope"><option value="day">每日</option><option value="month">每月</option></select>
+        <input id="tkCat" list="tkCatList" placeholder="分类（自定义，如 写作/运营）">
+        <datalist id="tkCatList"></datalist>
+        <input id="tkTitle" placeholder="任务内容">
+        <button class="btn btn-p" id="tkAdd">添加任务</button>
+      </div>
+      <div id="tkList"></div>
+    </div>
+
+    <!-- 报表 -->
+    <div class="ef-b" id="ef-report">
+      <div class="rp-btns">
+        <button class="btn btn-p" id="rpDay">生成今日日报</button>
+        <button class="btn btn-g" id="rpWeek">生成本周周报</button>
+        <button class="btn btn-g" id="rpCopy">复制报表</button>
+      </div>
+      <div class="out" id="rpOut" style="min-height:200px;white-space:pre-wrap">点上方按钮生成报表（含记账汇总 + 任务完成情况 + 自动分析）</div>
+    </div>
   </div>
 
   <!-- ═══ 我的作品 ═══ -->
@@ -1560,6 +1664,185 @@ $$("nav button").forEach(b => b.onclick = () => {
   if (b.dataset.pg === "mine") renderMy();
 });
 
+/* ════════════════════════════════════════════
+   效率页：记账 + 任务 + 报表（纯本地 localStorage）
+   ════════════════════════════════════════════ */
+const EFF = {
+  ledKey: "wxhot_ledger_v1",
+  taskKey: "wxhot_tasks_v1",
+  ledger: [],
+  tasks: [],
+};
+const bjNow = () => {
+  const d = new Date(Date.now() + 8 * 3600 * 1000);
+  return d.toISOString();
+};
+const bjDate = () => bjNow().slice(0, 10);
+const bjMonth = () => bjNow().slice(0, 7);
+const weekStart = () => {
+  const d = new Date(bjNow().slice(0, 19).replace("T", " ") + " +08:00");
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  return d.toISOString().slice(0, 10);
+};
+function ledLoad() { try { EFF.ledger = JSON.parse(localStorage.getItem(EFF.ledKey)) || []; } catch (e) { EFF.ledger = []; } }
+function ledSave() { try { localStorage.setItem(EFF.ledKey, JSON.stringify(EFF.ledger.slice(-2000))); } catch (e) {} }
+function taskLoad() { try { EFF.tasks = JSON.parse(localStorage.getItem(EFF.taskKey)) || []; } catch (e) { EFF.tasks = []; } }
+function taskSave() { try { localStorage.setItem(EFF.taskKey, JSON.stringify(EFF.tasks.slice(-1000))); } catch (e) {} }
+const fmt2 = n => (Math.round(n * 100) / 100).toLocaleString("zh-CN");
+
+/* ── 记账 ── */
+function ledRender() {
+  const today = bjDate(), month = bjMonth();
+  let inT = 0, outT = 0, mBal = 0, mCnt = 0;
+  EFF.ledger.forEach(x => {
+    if (x.d === today) { if (x.t === "in") inT += x.a; else outT += x.a; }
+    if ((x.d || "").startsWith(month)) { mCnt++; mBal += x.t === "in" ? x.a : -x.a; }
+  });
+  $("#ldIn").textContent = fmt2(inT);
+  $("#ldOut").textContent = fmt2(outT);
+  $("#ldBal").textContent = fmt2(mBal);
+  $("#ldBal").style.color = mBal >= 0 ? "var(--ink)" : "var(--red)";
+  $("#ldCnt").textContent = mCnt;
+  const cats = [...new Set(EFF.ledger.map(x => x.c).filter(Boolean))];
+  $("#ldCatList").innerHTML = cats.map(c => '<option value="' + esc(c) + '">').join("");
+  const rows = EFF.ledger.slice(-30).reverse();
+  $("#ldList").innerHTML = rows.length ? rows.map((x, i) => `
+    <div class="ld-row">
+      <span class="ld-c">${esc(x.c || "未分类")}</span>
+      <span class="ld-n">${esc(x.n || "")} <span style="color:var(--ink-3);font-size:12px">${(x.d || "").slice(5)}</span></span>
+      <span class="ld-amt ${x.t}">${x.t === "in" ? "+" : "-"}¥${fmt2(x.a)}</span>
+      <button class="ld-x" data-i="${EFF.ledger.length - 1 - i}" title="删除">×</button>
+    </div>`).join("")
+    : '<div class="empty-tip"><div class="t">还没有记录</div><div class="s">记第一笔收入或支出试试</div></div>';
+  $("#ldList").querySelectorAll(".ld-x").forEach(b => b.onclick = () => {
+    EFF.ledger.splice(+b.dataset.i, 1); ledSave(); ledRender();
+  });
+}
+$("#ldAdd").onclick = () => {
+  const a = parseFloat($("#ldAmt").value);
+  if (!a || a <= 0) { toast("请填金额"); return; }
+  EFF.ledger.push({ t: $("#ldType").value, a: Math.round(a * 100) / 100,
+    c: $("#ldCat").value.trim(), n: $("#ldNote").value.trim(), d: bjDate(), ts: Date.now() });
+  ledSave();
+  $("#ldAmt").value = ""; $("#ldNote").value = "";
+  ledRender(); toast("已记账");
+};
+$("#ldExport").onclick = () => {
+  const head = "日期,类型,分类,金额,备注\n";
+  const body = EFF.ledger.map(x => x.d + "," + (x.t === "in" ? "收入" : "支出") + "," + (x.c || "") + "," + x.a + "," + (x.n || "").replace(/,/g, "，")).join("\n");
+  dl("记账流水.csv", "﻿" + head + body, "text/csv");
+};
+
+/* ── 任务 ── */
+function tkRender() {
+  const month = bjMonth();
+  const day = EFF.tasks.filter(x => x.scope === "day");
+  const month_ = EFF.tasks.filter(x => x.scope === "month");
+  const doneToday = day.filter(x => x.done).length;
+  const mAll = EFF.tasks.filter(x => (x.d || "").startsWith(month));
+  const mDone = mAll.filter(x => x.done).length;
+  $("#tkToday").textContent = day.length - doneToday;
+  $("#tkDone").textContent = doneToday;
+  $("#tkMonth").textContent = mAll.length;
+  $("#tkRate").textContent = mAll.length ? Math.round(mDone / mAll.length * 100) + "%" : "—";
+  const cats = [...new Set(EFF.tasks.map(x => x.c).filter(Boolean))];
+  $("#tkCatList").innerHTML = cats.map(c => '<option value="' + esc(c) + '">').join("");
+  const row = (x, i) => `
+    <div class="tk-row ${x.done ? "done" : ""}">
+      <input type="checkbox" ${x.done ? "checked" : ""} data-i="${i}">
+      <span class="tk-t">${esc(x.title)}</span>
+      ${x.c ? '<span class="ld-c">' + esc(x.c) + "</span>" : ""}
+      <span class="tk-scope">${x.scope === "day" ? "每日" : "每月"}</span>
+      <button class="ld-x" data-del="${i}" title="删除">×</button>
+    </div>`;
+  const sec = (title, arr) => arr.length
+    ? '<div class="tk-sec">' + title + "（" + arr.filter(x => x.done).length + "/" + arr.length + "）</div>" + arr.map(row).join("")
+    : "";
+  const byCat = arr => {
+    const g = {};
+    arr.forEach(x => { const k = x.c || "未分类"; (g[k] = g[k] || []).push(x); });
+    return g;
+  };
+  let html = "";
+  const dg = byCat(day);
+  if (Object.keys(dg).length) {
+    Object.entries(dg).forEach(([c, arr]) => { html += sec("每日 · " + c, arr); });
+  } else {
+    html += '<div class="empty-tip"><div class="t">还没有任务</div><div class="s">添加一个每日或每月任务</div></div>';
+  }
+  html += sec("每月任务", month_);
+  $("#tkList").innerHTML = html;
+  $("#tkList").querySelectorAll("input[type=checkbox]").forEach(cb => cb.onchange = () => {
+    EFF.tasks[+cb.dataset.i].done = cb.checked;
+    EFF.tasks[+cb.dataset.i].doneAt = cb.checked ? bjDate() : null;
+    taskSave(); tkRender();
+  });
+  $("#tkList").querySelectorAll(".ld-x").forEach(b => b.onclick = () => {
+    EFF.tasks.splice(+b.dataset.del, 1); taskSave(); tkRender();
+  });
+}
+$("#tkAdd").onclick = () => {
+  const t = $("#tkTitle").value.trim();
+  if (!t) { toast("请填任务内容"); return; }
+  EFF.tasks.push({ scope: $("#tkScope").value, c: $("#tkCat").value.trim(),
+    title: t, done: false, d: bjDate(), created: Date.now() });
+  taskSave();
+  $("#tkTitle").value = "";
+  tkRender(); toast("已添加");
+};
+
+/* ── 报表（自动结算 + 分析）── */
+let lastReport = "";
+function buildReport(scope) {
+  const isDay = scope === "day";
+  const month = bjMonth(), today = bjDate(), ws = weekStart();
+  const inR = isDay ? x => x.d === today : x => x.d >= ws && x.d <= today;
+  const led = EFF.ledger.filter(inR);
+  const income = led.filter(x => x.t === "in").reduce((s, x) => s + x.a, 0);
+  const outcome = led.filter(x => x.t === "out").reduce((s, x) => s + x.a, 0);
+  const byCat = {};
+  led.filter(x => x.t === "out").forEach(x => { const k = x.c || "未分类"; byCat[k] = (byCat[k] || 0) + x.a; });
+  const top = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const tkAll = EFF.tasks.filter(isDay ? x => x.scope === "day" : x => (x.d || "").startsWith(month));
+  const tkDone = tkAll.filter(x => x.done).length;
+  const rate = tkAll.length ? Math.round(tkDone / tkAll.length * 100) : 0;
+  const bal = income - outcome;
+  const ana = [];
+  if (!led.length && !tkAll.length) ana.push("暂无数据：先记几笔账、加几个任务，报表才有内容。");
+  if (led.length) {
+    ana.push(bal >= 0 ? "✅ 结余为正（+¥" + fmt2(bal) + "）" + (outcome > 0 ? "，支出占收入的 " + Math.round(outcome / Math.max(income, 1) * 100) + "%" : "")
+                      : "⚠️ 本期超支 ¥" + fmt2(-bal) + "，注意控制支出。");
+    if (top.length) ana.push("💸 最大支出：" + top[0][0] + "（¥" + fmt2(top[0][1]) + (outcome ? "，占支出 " + Math.round(top[0][1] / outcome * 100) + "%" : "") + "）");
+  }
+  if (tkAll.length) ana.push(rate >= 80 ? "🔥 任务完成率 " + rate + "%，执行力很强。"
+    : rate >= 40 ? "👍 任务完成率 " + rate + "%，还差 " + (tkAll.length - tkDone) + " 项完成。"
+    : "⏳ 任务完成率只有 " + rate + "%，建议先挑 2-3 件优先做完。");
+  const title = isDay ? "📅 日报 · " + today : "📊 周报 · " + ws + " ~ " + today;
+  lastReport = title + "\n\n" +
+    "【收支】收入 ¥" + fmt2(income) + " ｜ 支出 ¥" + fmt2(outcome) + " ｜ 结余 ¥" + fmt2(bal) + "\n" +
+    "【支出构成】" + (top.length ? top.map(([c, v]) => c + " ¥" + fmt2(v)).join("、") : "无支出") + "\n" +
+    "【任务】完成 " + tkDone + "/" + tkAll.length + "（完成率 " + rate + "%）\n\n" +
+    "【自动分析】\n" + ana.map(a => "· " + a).join("\n") + "\n\n—— 林的创作平台 · 自动生成";
+  $("#rpOut").textContent = lastReport;
+}
+$("#rpDay").onclick = () => buildReport("day");
+$("#rpWeek").onclick = () => buildReport("week");
+$("#rpCopy").onclick = () => {
+  if (!lastReport) { toast("先生成一份报表"); return; }
+  copyText(lastReport, "报表已复制");
+};
+
+/* ── 效率页初始化 ── */
+ledLoad(); taskLoad();
+ledRender(); tkRender();
+$$(".eff-tabs button").forEach(b => b.onclick = () => {
+  $$(".eff-tabs button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  $$(".ef-b").forEach(x => x.classList.remove("on"));
+  $("#ef-" + b.dataset.ef).classList.add("on");
+});
+
 loadData();
 renderMy();
 
@@ -1868,7 +2151,7 @@ async function askAs(text, imgs = []) {
     ? "\n【L3 长期记忆 · 用户画像】\n" + profBits.join("\n")
     : "";
 
-  const sys = `你是「热文创作台」的智能创作助手，服务公众号/自媒体创作者。
+  const sys = `你是「林的创作平台」的智能创作助手，服务公众号/自媒体创作者。
 你有三层记忆，会跨会话记住用户：
 
 ${arcTxt}
