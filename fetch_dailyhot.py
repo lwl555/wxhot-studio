@@ -1,12 +1,13 @@
 # 从开源热榜 API（DailyHotApi，GitHub ★4k+）补充板块
 # 目的：补 tophub 没有的平台（简书 / IT之家 / 爱范儿 / 酷安 / V2EX / NGA / 吾爱破解 / 网易新闻 / 新浪新闻 / HelloGitHub / 豆瓣小组 / CSDN）
-# 说明：公开实例偶尔不稳定，失败不影响主数据（Actions 里 continue-on-error）
+# 说明：公开实例 api-hot.imsyy.top 现已 DNS 失效（境内外都解析不了，实测 Errno -5）。
+# 自部署一份后，把地址配到环境变量 DAILYHOT_API 即可自动生效；抓不到不影响主数据（continue-on-error）
 import urllib.request, ssl, gzip, json, hashlib, os, sys, time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fetch_hot import guess_category, fix_cover   # 复用分类规则与封面 https 化
 
-API = "https://api-hot.imsyy.top/"
+API = os.environ.get("DAILYHOT_API") or "https://api-hot.imsyy.top/"
 CTX = ssl.create_default_context()
 CTX.check_hostname = False
 CTX.verify_mode = ssl.CERT_NONE
