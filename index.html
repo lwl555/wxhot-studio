@@ -1095,10 +1095,38 @@ function filtered() {
   });
 }
 
+/* 筛空时：算出放宽哪一项条件能出内容，给一键切换，而不是干巴巴提示"没有结果" */
+function emptyHint() {
+  const all = DATA.articles || [], f = FILT;
+  const relax = drop => all.filter(x =>
+    (drop === "real" || !f.real || x.hasRealRead) &&
+    (drop === "plat" || f.plat === "全部" || x.platform === f.plat) &&
+    (drop === "cat"  || f.cat === "全部"  || x.category === f.cat)).length;
+  const tries = [];
+  if (f.real) tries.push(["不限真实阅读量", "real", relax("real")]);
+  if (f.plat !== "全部") tries.push([`不限平台（当前 ${f.plat}）`, "plat", relax("plat")]);
+  if (f.cat !== "全部") tries.push([`不限分类（当前 ${f.cat}）`, "cat", relax("cat")]);
+  const ok = tries.filter(t => t[2] > 0).sort((a, b) => b[2] - a[2])[0];
+  const cond = [f.plat !== "全部" ? f.plat : "", f.cat !== "全部" ? f.cat : "", f.real ? "真实阅读量" : ""].filter(Boolean).join(" × ");
+  const head = cond ? esc(cond) + " 下暂时没有内容" : "没有符合条件的文章";
+  if (!ok) return `<div class="empty-tip"><div class="t">${head}</div><div class="s">换个筛选条件试试</div></div>`;
+  return `<div class="empty-tip"><div class="t">${head}</div>
+    <div class="s">放宽一下就有内容了：</div>
+    <button class="btn btn-p" id="emptyFix" data-drop="${ok[1]}" style="margin-top:14px">${esc(ok[0])} · ${ok[2]} 篇</button></div>`;
+}
+
 function renderList() {
   const arr = filtered();
   if (!arr.length) {
-    $("#list").innerHTML = `<div class="empty-tip"><div class="t">没有符合条件的文章</div><div class="s">换个筛选条件试试</div></div>`;
+    $("#list").innerHTML = emptyHint();
+    const btn = $("#emptyFix");
+    if (btn) btn.onclick = () => {
+      const d = btn.dataset.drop;
+      if (d === "real") FILT.real = false;
+      if (d === "plat") FILT.plat = "全部";
+      if (d === "cat") FILT.cat = "全部";
+      renderFilters(); renderList();
+    };
     return;
   }
   $("#list").innerHTML = arr.map((a, i) => `
