@@ -27,6 +27,10 @@ jobs:
       - name: 抓取最新热榜
         run: python fetch_hot.py
 
+      - name: 补充开源热榜（DailyHotApi）
+        continue-on-error: true      # 公开实例可能不稳，失败不影响主数据
+        run: python fetch_dailyhot.py
+
       - name: 采集真实封面
         continue-on-error: true      # 封面采集失败不影响主数据
         run: python fetch_covers.py

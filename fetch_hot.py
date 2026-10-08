@@ -236,6 +236,7 @@ def parse_node(node_id, platform, board_name, category, rank_base=0):
             "readCount": reads,
             "readCountText": (w.group(1).strip() if w else "—"),
             "hasRealRead": has_real_read,
+            "source": "tophub",
             "rank": rank_base + idx + 1,
             "cover": fix_cover(cover),
             "desc": desc,
@@ -269,6 +270,7 @@ def main():
     uniq.sort(key=lambda x: (not x["hasRealRead"], -(x["readCount"] or 0)))
 
     # 继承上一轮已采集到的封面/摘要：本轮是全新抓取，不继承的话补图成果会被覆盖丢失
+    old = {}
     try:
         with open(OUT_FILE, encoding="utf-8") as f:
             old = json.load(f)
@@ -289,6 +291,17 @@ def main():
             it["desc"] = o["desc"]
     if inherited:
         print(f"\n继承上一轮封面 {inherited} 条（避免补图成果被覆盖）")
+
+    # 保留上一轮来自其他源的条目（开源 API 抓的），本轮 tophub 抓取不会把它们冲掉
+    seen_u = {x["url"] for x in uniq}
+    kept = 0
+    for x in (old.get("articles") or []):
+        if x.get("source") and x.get("source") != "tophub" and x.get("url") not in seen_u:
+            uniq.append(x)
+            seen_u.add(x["url"])
+            kept += 1
+    if kept:
+        print(f"保留其他数据源条目 {kept} 条")
 
     os.makedirs(OUT_DIR, exist_ok=True)
     payload = {
