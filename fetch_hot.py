@@ -250,6 +250,28 @@ def main():
     # 公众号爆文（真实阅读量）优先置顶
     uniq.sort(key=lambda x: (not x["hasRealRead"], -(x["readCount"] or 0)))
 
+    # 继承上一轮已采集到的封面/摘要：本轮是全新抓取，不继承的话补图成果会被覆盖丢失
+    try:
+        with open(OUT_FILE, encoding="utf-8") as f:
+            old = json.load(f)
+        oldmap = {x.get("url"): x for x in (old.get("articles") or [])}
+    except Exception:
+        oldmap = {}
+    inherited = 0
+    for it in uniq:
+        o = oldmap.get(it["url"])
+        if not o:
+            continue
+        if not it.get("cover") and o.get("cover"):
+            it["cover"] = o["cover"]
+            if o.get("coverReal"):
+                it["coverReal"] = True
+            inherited += 1
+        if not it.get("desc") and o.get("desc"):
+            it["desc"] = o["desc"]
+    if inherited:
+        print(f"\n继承上一轮封面 {inherited} 条（避免补图成果被覆盖）")
+
     os.makedirs(OUT_DIR, exist_ok=True)
     payload = {
         "updatedAt": now_bj(),
