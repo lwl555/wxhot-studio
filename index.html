@@ -549,6 +549,36 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-src-t{display:block;font-size:13px;color:var(--ink);line-height:1.45;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .as-src-m{display:block;font-size:11px;color:var(--ink-3);margin-top:3px}
+/* ── 远程 PC 页 ── */
+.dev-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:14px;background:var(--bg)}
+.dev-ic{width:40px;height:40px;border-radius:10px;background:var(--blue-50);color:var(--blue);display:grid;place-items:center;flex-shrink:0}
+.dev-ic svg{width:22px;height:22px}
+.dev-meta{flex:1}
+.dev-t{font-size:15px;font-weight:600}
+.dev-s{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.dev-s.on{color:var(--green)}
+.dev-s.off{color:var(--red)}
+.rb-sec-t{font-size:13px;font-weight:600;color:var(--ink-2);margin:18px 0 10px}
+.rb-cmds{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.rb-cmd{padding:14px 10px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);font-size:13.5px;font-weight:500;color:var(--ink);text-align:center;transition:.14s}
+.rb-cmd:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-50)}
+.rb-custom{display:flex;gap:10px;margin-top:12px}
+.rb-custom input{flex:1;padding:11px 12px;border:1px solid var(--line);border-radius:var(--r-lg);font-size:14px}
+.rb-custom input:focus{outline:none;border-color:var(--blue)}
+.rb-task{border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 15px;margin-bottom:10px}
+.rb-task .rb-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rb-task .rb-cmd-n{font-size:14px;font-weight:500}
+.rb-task .rb-at{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+.rb-badge{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;flex-shrink:0}
+.rb-badge.pending{background:#eef2f7;color:var(--ink-3)}
+.rb-badge.claimed{background:var(--blue-50);color:var(--blue)}
+.rb-badge.done{background:#e7f7ee;color:var(--green)}
+.rb-task .rb-result{font-size:12.5px;color:var(--ink-2);margin-top:8px;line-height:1.6;white-space:pre-wrap;background:var(--bg-2);border-radius:8px;padding:8px 10px}
+.rb-empty{color:var(--ink-3);font-size:13px;padding:14px 0;text-align:center}
+.rb-count{color:var(--ink-3);font-weight:400}
+@media(max-width:560px){
+  .rb-cmds{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -565,6 +595,9 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
       </button>
       <button data-pg="eff">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/></svg><span>效率</span>
+      </button>
+      <button data-pg="remote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg><span>远程</span>
       </button>
     </nav>
     <div class="hd-r">
@@ -672,6 +705,33 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   <!-- ═══ 我的作品 ═══ -->
   <div class="page" id="pg-mine">
     <div class="lst" id="myList"></div>
+  </div>
+
+  <!-- ═══ 远程 PC ═══ -->
+  <div class="page" id="pg-remote">
+    <div class="dev-card">
+      <div class="dev-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
+      <div class="dev-meta">
+        <div class="dev-t">我的电脑</div>
+        <div class="dev-s" id="devStatus">检测中…</div>
+      </div>
+      <button class="btn btn-g btn-sm" id="btnRbRefresh">刷新状态</button>
+    </div>
+    <div class="note" id="rbNote">指令经 Supabase 中转发往你的电脑，电脑端需保持运行并开启「远程监听」。网页端已就绪，电脑端监听接入后，即可下发指令并查看执行结果。</div>
+
+    <div class="rb-sec-t">快捷指令</div>
+    <div class="rb-cmds">
+      <button class="rb-cmd" data-cmd="fetch_wechat">抓取最新微信热榜</button>
+      <button class="rb-cmd" data-cmd="fetch_all">刷新全部热榜数据</button>
+      <button class="rb-cmd" data-cmd="aigc_detect">对当前文章跑 AIGC 检测</button>
+    </div>
+    <div class="rb-custom">
+      <input id="rbCustom" placeholder="输入自定义指令">
+      <button class="btn btn-p" id="rbSendCustom">发送</button>
+    </div>
+
+    <div class="rb-sec-t">任务记录 <span id="rbTaskCount" class="rb-count"></span></div>
+    <div id="rbTaskList"><div class="rb-empty">暂无任务</div></div>
   </div>
 
 </div>
@@ -1706,7 +1766,103 @@ $$("nav button").forEach(b => b.onclick = () => {
   $$(".page").forEach(p => p.classList.remove("on"));
   $("#pg-" + b.dataset.pg).classList.add("on");
   if (b.dataset.pg === "mine") renderMy();
+  if (b.dataset.pg === "remote") renderRemote();
 });
+
+/* ════════════════════════════════════════════
+   远程 PC：经 Supabase 中转下发指令、查看执行结果
+   复用现有 sync-bridge（按 sync-id 存取的 KV）做任务队列，零额外部署
+   ════════════════════════════════════════════ */
+const RB = {
+  idTasks: "remote_tasks_main",
+  idDev: "remote_device_main",
+  async get(id){
+    try {
+      const r = await fetch(SYNC.url + "?id=" + encodeURIComponent(id), { headers:{Authorization:"Bearer "+SYNC.anon} });
+      if(!r.ok) return null;
+      return await r.json();
+    } catch(e){ return null; }
+  },
+  async set(id, obj){
+    try {
+      const r = await fetch(SYNC.url, { method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+SYNC.anon, "x-sync-id": id },
+        body: JSON.stringify(Object.assign({ from:"remote", at:new Date().toISOString() }, obj)) });
+      return r.ok;
+    } catch(e){ return false; }
+  },
+  async addTask(cmd, args){
+    const cur = await this.get(this.idTasks) || { tasks:[] };
+    if(!cur.tasks) cur.tasks = [];
+    const t = { id:"t"+Date.now(), cmd, args:args||{}, status:"pending", at:new Date().toISOString(), result:"" };
+    cur.tasks.push(t);
+    await this.set(this.idTasks, cur);
+    return t;
+  },
+  async listTasks(){
+    const cur = await this.get(this.idTasks) || { tasks:[] };
+    return (cur.tasks||[]).slice().reverse();
+  },
+  async beat(name){
+    return await this.set(this.idDev, { online:true, name:name||"林的创作平台 PC", last:new Date().toISOString() });
+  },
+  async device(){
+    const d = await this.get(this.idDev);
+    if(!d || !d.last) return { online:false, last:null };
+    const ago = Date.now() - new Date(d.last).getTime();
+    return { online: ago < 120000, last:d.last, name:d.name };
+  }
+};
+const RB_CMD_NAME = { fetch_wechat:"抓取最新微信热榜", fetch_all:"刷新全部热榜数据", aigc_detect:"AIGC 检测", custom:"自定义指令" };
+let rbTimer = null;
+async function renderRemote(){
+  const dev = await RB.device();
+  const el = $("#devStatus");
+  if(dev.online){ el.textContent = "在线 · 最后心跳 " + agoText(dev.last); el.className = "dev-s on"; }
+  else { el.textContent = dev.last ? "离线 · 最后在线 " + agoText(dev.last) : "未连接（电脑端未开启监听）"; el.className = "dev-s off"; }
+  const tasks = await RB.listTasks();
+  $("#rbTaskCount").textContent = tasks.length ? "(" + tasks.length + ")" : "";
+  const box = $("#rbTaskList");
+  if(!tasks.length){ box.innerHTML = '<div class="rb-empty">暂无任务</div>'; }
+  else {
+    box.innerHTML = tasks.map(t => {
+      const st = t.status==="done" ? "已完成" : t.status==="claimed" ? "执行中" : "待执行";
+      const extra = t.cmd==="custom" && t.args && t.args.text ? "：" + t.args.text : "";
+      return `<div class="rb-task">
+        <div class="rb-top">
+          <span class="rb-cmd-n">${esc((RB_CMD_NAME[t.cmd]||t.cmd) + extra)}</span>
+          <span class="rb-badge ${t.status}">${st}</span>
+        </div>
+        <div class="rb-at">${fixTz(t.at)}（${agoText(t.at)}）</div>
+        ${t.result ? `<div class="rb-result">${esc(t.result)}</div>` : ""}
+      </div>`;
+    }).join("");
+  }
+  if(rbTimer) clearInterval(rbTimer);
+  rbTimer = setInterval(async () => {
+    if(!$("#pg-remote").classList.contains("on")) { clearInterval(rbTimer); rbTimer = null; return; }
+    const d2 = await RB.device();
+    const e2 = $("#devStatus");
+    if(d2.online){ e2.textContent = "在线 · 最后心跳 " + agoText(d2.last); e2.className = "dev-s on"; }
+    else { e2.textContent = d2.last ? "离线 · 最后在线 " + agoText(d2.last) : "未连接（电脑端未开启监听）"; e2.className = "dev-s off"; }
+    const tk = await RB.listTasks();
+    $("#rbTaskCount").textContent = tk.length ? "(" + tk.length + ")" : "";
+  }, 8000);
+}
+$$(".rb-cmd").forEach(b => b.onclick = async () => {
+  await RB.addTask(b.dataset.cmd);
+  toast("已下发：" + (RB_CMD_NAME[b.dataset.cmd]||b.dataset.cmd));
+  renderRemote();
+});
+$("#rbSendCustom").onclick = async () => {
+  const v = $("#rbCustom").value.trim();
+  if(!v){ toast("请输入指令内容"); return; }
+  await RB.addTask("custom", { text:v });
+  $("#rbCustom").value = "";
+  toast("已下发自定义指令");
+  renderRemote();
+};
+$("#btnRbRefresh").onclick = renderRemote;
 
 /* ════════════════════════════════════════════
    效率页：记账 + 任务 + 报表（纯本地 localStorage）
