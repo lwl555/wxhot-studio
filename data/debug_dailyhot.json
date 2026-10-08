@@ -1,0 +1,78 @@
+{
+ "at": "2026-10-08 18:35:00",
+ "added": 0,
+ "diag": [
+  {
+   "route": "jianshu",
+   "plat": "简书",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "ithome",
+   "plat": "IT之家",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "ifanr",
+   "plat": "爱范儿",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "coolapk",
+   "plat": "酷安",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "v2ex",
+   "plat": "V2EX",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "ngabbs",
+   "plat": "NGA",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "52pojie",
+   "plat": "吾爱破解",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "netease-news",
+   "plat": "网易新闻",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "sina-news",
+   "plat": "新浪新闻",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "hellogithub",
+   "plat": "HelloGitHub",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "douban-group",
+   "plat": "豆瓣小组",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  },
+  {
+   "route": "csdn",
+   "plat": "CSDN",
+   "ok": false,
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+  }
+ ]
+}
