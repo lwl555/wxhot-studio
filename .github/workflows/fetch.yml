@@ -1,20 +1,10 @@
 name: 每日热榜采集
 
 # 自动抓取最新热榜并更新 articles.json
-# 注意：GitHub Actions 的 cron 用的是 UTC 时间，北京时间 = UTC+8
-# UTC 22,00,02,04,06,08,10,12,14 → 北京 06 / 08 / 10 / 12 / 14 / 16 / 18 / 20 / 22 点
-# 白天每 2 小时更新一次；加 22 点和早 6 点，避免晚上出现 12 小时空窗
+# 每整点跑一次（cron 为 UTC，北京=UTC+8，即北京时间每小时整点），保证数据尽量最新
 on:
   schedule:
-    - cron: '0 22 * * *'
-    - cron: '0 0 * * *'
-    - cron: '0 2 * * *'
-    - cron: '0 4 * * *'
-    - cron: '0 6 * * *'
-    - cron: '0 8 * * *'
-    - cron: '0 10 * * *'
-    - cron: '0 12 * * *'
-    - cron: '0 14 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:      # 支持在 GitHub 页面手动点「Run workflow」立即跑一次
 
 permissions:
