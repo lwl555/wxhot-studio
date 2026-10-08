@@ -1021,6 +1021,10 @@ const PLAT_COLOR = {
   "36氪":"#4285f4", "虎嗅":"#d32f2f", "虎嗅网":"#d32f2f", "澎湃":"#d92419",
   "机器之心":"#1a73e8", "量子位":"#6c5ce7", "少数派":"#b45309",
   "豆瓣":"#00b51d", "梨视频":"#00b51d",
+  "华尔街见闻":"#1a73e8", "第一财经":"#c8161d", "新浪体育":"#e60012",
+  "虎扑":"#c8161e", "掘金":"#1e80ff", "果壳":"#00a652",
+  "汽车之家":"#0088cc", "猫眼":"#f03d37", "腾讯新闻":"#0052d9",
+  "煎蛋":"#f97316", "快手":"#ff6600",
 };
 const platColor = p => PLAT_COLOR[p] || "#6b7280";
 const platTag = p => {
@@ -2380,30 +2384,106 @@ function renderAsImgs() {
 }
 
 /* ── 核心：调 3.0-flash（支持图文混排 + 三层记忆） ── */
-/* 检索本地热榜数据：按关键词 + 平台（微信/公众号）匹配，返回 top6，供 AI 引用 */
-async function searchArticles(q) {
+/* ══ AI 取材工具：检索 / 自动筛查 / 自动推荐（覆盖全部平台板块，不止微信）══ */
+const PLAT_NAMES = ["微信", "微信读书", "知乎", "微博", "今日头条", "百度", "百度贴吧", "抖音",
+  "哔哩哔哩", "36氪", "虎嗅网", "澎湃", "机器之心", "量子位", "少数派", "豆瓣", "梨视频",
+  "百度视频", "华尔街见闻", "第一财经", "新浪体育", "虎扑", "掘金", "果壳", "汽车之家",
+  "猫眼", "腾讯新闻", "煎蛋", "快手"];
+const CAT_NAMES = ["科技数码", "财经理财", "社会热点", "娱乐影视", "体育赛事", "健康养生",
+  "情感心理", "职场成长", "教育考试", "生活美食"];
+/* 长名优先匹配（"微信读书" 优先于 "微信"） */
+const hitName = (names, q) => names.filter(n => (q || "").includes(n)).sort((a, b) => b.length - a.length)[0] || "";
+
+let ARTS_CACHE = null, ARTS_AT = 0;
+async function loadArts() {
+  const now = Date.now();
+  if (ARTS_CACHE && now - ARTS_AT < 5 * 60 * 1000) return ARTS_CACHE;   // 5 分钟缓存，避免重复请求
+  const r = await fetch("data/articles.json?v=" + now);
+  const d = await r.json();
+  ARTS_CACHE = d.articles || []; ARTS_AT = now;
+  return ARTS_CACHE;
+}
+
+/* 关键词检索：自动识别问句里的平台名 / 分类名，覆盖全站各板块 */
+async function searchArticles(q, opt = {}) {
   try {
-    const r = await fetch("data/articles.json?v=" + Date.now());
-    const d = await r.json();
-    const arts = d.articles || [];
-    const wantWx = /微信|公众号|视频号/.test(q || "");
+    const arts = await loadArts();
     let pool = arts;
-    if (wantWx) pool = arts.filter(x => /微信/.test(x.platform || "") || /微信|视频号/.test(x.board || ""));
+    const plat = opt.plat || hitName(PLAT_NAMES, q || "");
+    const cat = opt.cat || hitName(CAT_NAMES, q || "");
+    if (plat) pool = pool.filter(x => (x.platform || "") === plat || (x.platform || "").includes(plat) || plat.includes(x.platform || ""));
+    if (cat) pool = pool.filter(x => x.category === cat);
+    // 平台名/分类名不算关键词：否则"知乎 科技数码"这种纯条件查询必然一条都匹配不上
+    let kw = q || "";
+    if (plat) kw = kw.split(plat).join(" ");
+    if (cat) kw = kw.split(cat).join(" ");
+    kw = kw.trim();
     const grams = [];
-    for (const w of (q || "").toLowerCase().match(/[a-z0-9]{2,}/g) || []) grams.push(w);
-    const cjk = (q || "").replace(/[^一-龥]/g, " ");
+    for (const w of kw.toLowerCase().match(/[a-z0-9]{2,}/g) || []) grams.push(w);
+    const cjk = kw.replace(/[^一-龥]/g, " ");
     for (const seg of cjk.split(" ").filter(Boolean))
       for (let i = 0; i < seg.length - 1; i++) grams.push(seg.slice(i, i + 2));
+    // 纯条件浏览（没剩下关键词）：直接按真实阅读量与热度排序返回
+    if (!grams.length) {
+      return pool.slice().sort((a, b) =>
+        (b.hasRealRead ? 1 : 0) - (a.hasRealRead ? 1 : 0) || (b.readCount || 0) - (a.readCount || 0)
+      ).slice(0, opt.limit || 8);
+    }
     const scored = pool.map(x => {
       const t = (x.title || "") + (x.desc ? " " + x.desc : "");
       const tl = t.toLowerCase();
       let s = 0;
       for (const g of grams) if (g.length >= 2 && tl.includes(g)) s += /[一-龥]/.test(g) ? 2 : 1;
-      if (q && tl.includes((q || "").toLowerCase())) s += 6;
+      if (kw && tl.includes(kw.toLowerCase())) s += 6;
       return { x, s };
-    }).filter(o => o.s > 0).sort((a, b) => b.s - a.s).slice(0, 6).map(o => o.x);
+    }).filter(o => o.s > 0).sort((a, b) => b.s - a.s || (b.x.readCount || 0) - (a.x.readCount || 0))
+      .slice(0, opt.limit || 8).map(o => o.x);
     return scored;
   } catch (e) { return []; }
+}
+
+/* 自动筛查：按平台 / 分类 / 关键词 / 阅读量条件挑选 */
+async function pickArticles(o = {}) {
+  try {
+    let pool = await loadArts();
+    if (o.plat) pool = pool.filter(x => (x.platform || "") === o.plat);
+    if (o.cat) pool = pool.filter(x => x.category === o.cat);
+    if (o.kw) pool = pool.filter(x => ((x.title || "") + (x.desc || "")).toLowerCase().includes(String(o.kw).toLowerCase()));
+    if (o.minRead) pool = pool.filter(x => (x.readCount || 0) >= o.minRead);
+    if (o.realOnly) pool = pool.filter(x => x.hasRealRead);
+    return pool.slice().sort((a, b) =>
+      (b.hasRealRead ? 1 : 0) - (a.hasRealRead ? 1 : 0) || (b.readCount || 0) - (a.readCount || 0)
+    ).slice(0, o.limit || 8);
+  } catch (e) { return []; }
+}
+
+/* 从问句解析筛查条件（"知乎科技数码前10条" → {plat:知乎, cat:科技数码, limit:10}） */
+function parsePick(t) {
+  const m = (t || "").match(/(\d+)\s*(条|篇|个)/);
+  return {
+    plat: hitName(PLAT_NAMES, t || ""),
+    cat: hitName(CAT_NAMES, t || ""),
+    limit: m ? Math.min(Math.max(+m[1], 1), 20) : 8,
+    realOnly: /真实阅读|真实数据|有阅读量/.test(t || ""),
+  };
+}
+
+/* 按意图自动取材：推荐（依据你的偏好）/ 筛查（按条件）/ 检索（按关键词） */
+async function aiRetrieve(text) {
+  const t = text || "";
+  if (/推荐|选题|写什么|适合我|帮我挑|找点素材|有什么可写|给点灵感/.test(t)) {
+    let list = [];
+    try { list = recommend(8) || []; } catch (e) { list = []; }
+    if (!list.length) list = await pickArticles({ limit: 8 });
+    return { kind: "为你推荐", list };
+  }
+  if (/筛|筛选|找出|列出|最高|最热|阅读量|前\d|几条|十篇|top/i.test(t)) {
+    const o = parsePick(t);
+    const list = await pickArticles(o);
+    const desc = [o.plat, o.cat, o.realOnly ? "仅真实阅读量" : ""].filter(Boolean).join(" · ");
+    if (list.length) return { kind: "自动筛查" + (desc ? "（" + desc + "）" : ""), list };
+  }
+  return { kind: "检索到", list: await searchArticles(t) };
 }
 
 async function askAs(text, imgs = [], retrieval = "") {
@@ -2438,7 +2518,7 @@ ${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题�
 3. 如果合适，在回答末尾另起一行，用 [仿写:文章标题] 格式给出 1-3 个可一键仿写的候选。
 4. 聊写法时给具体可执行建议，不要空话。
 5. 如果用户提到自己的身份/偏好/目标，要记住并体现在后续回答里。
-6. 当下方出现【检索到的相关热文】时，优先基于这些真实热文回答（可引用标题/阅读量），并建议用户点开参考或仿写；禁止编造榜单里没有的信息。${retrieval ? "\n\n【检索到的相关热文 · 实时热榜数据（可引用，不要编造）】\n" + retrieval : ""}`;
+6. 你有三种取材能力，系统会自动选一种并把结果放在下方【取材结果】里：①按关键词检索 ②按条件自动筛查（平台/分类/阅读量）③依据用户偏好自动推荐。素材来自全站 29 个平台板块的实时热榜，不只是微信。优先基于这些真实热文回答（可引用标题/平台/分类/阅读量），说明为什么值得写，并建议用户点开参考或仿写；禁止编造结果里没有的信息。${retrieval ? "\n\n【取材结果 · 实时热榜真实数据（可引用，不要编造）】\n" + retrieval : ""}`;
 
   // 组装多模态消息：有图就带 image_url
   let content;
@@ -2537,11 +2617,13 @@ async function sendAs() {
   $("#asLog").scrollTop = $("#asLog").scrollHeight;
 
   try {
-    const doSearch = /[一-龥]/.test(text) && (text.length >= 3 || /微信|公众号|文章|热点|热文|选题|最新|查|搜|找|资讯/.test(text));
-    const hits = doSearch ? await searchArticles(text) : [];
+    const doSearch = /[一-龥]/.test(text) && (text.length >= 3 || /微信|公众号|文章|热点|热文|选题|最新|查|搜|找|资讯|推荐|筛|阅读量/.test(text));
+    const got = doSearch ? await aiRetrieve(text) : { kind: "", list: [] };
+    const hits = got.list || [];
+    const kindTxt = got.kind || "检索到";
     let retrieval = "";
     if (hits.length) retrieval = hits.map((h, i) =>
-      `${i + 1}. [${h.platform}·${h.board}] ${h.title}` + (h.hasRealRead ? `（阅读 ${h.readCountText}）` : "") + ` — ${h.url}`).join("\n");
+      `${i + 1}. [${h.platform}·${h.category}] ${h.title}` + (h.hasRealRead ? `（阅读 ${h.readCountText}）` : "") + ` — ${h.url}`).join("\n");
     const rep = await askAs(text, pendingImgs, retrieval);
     tip.remove();
     const { html, cands } = renderAsReply(rep);
@@ -2549,7 +2631,7 @@ async function sendAs() {
     if (hits.length) {
       const box = document.createElement("div");
       box.className = "as-src";
-      box.innerHTML = `<div class="as-src-h">🔍 检索到 ${hits.length} 篇相关热文</div>` + hits.map(h =>
+      box.innerHTML = `<div class="as-src-h">🔍 ${kindTxt} ${hits.length} 篇热文</div>` + hits.map(h =>
         `<a class="as-src-i" href="${h.url}" target="_blank" rel="noopener noreferrer nofollow">` +
         `<span class="as-src-t">${esc(h.title)}</span>` +
         `<span class="as-src-m">${esc(h.platform)}·${esc(h.board)}${h.hasRealRead ? " · 阅读 " + esc(h.readCountText) : ""}</span></a>`).join("");
