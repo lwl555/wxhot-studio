@@ -1066,7 +1066,7 @@ function renderStats() {
 function renderFilters() {
   const a = DATA.articles || [];
   const plats = [...new Set(a.map(x => x.platform))];
-  const cats = [...new Set(a.map(x => x.category))];
+  const cats = [...new Set(a.map(x => x.category))].sort((x, y) => (x === "综合") - (y === "综合"));
 
   $("#fPlat").innerHTML = ["全部", ...plats].map(p =>
     `<button class="chip ${p === FILT.plat ? "on" : ""}" data-p="${esc(p)}">${p === "全部" ? "" : `<i class="dot" style="--dc:${platColor(p)}"></i>`}${esc(p)}</button>`).join("");

@@ -1,10 +1,12 @@
 name: 每日热榜采集
 
 # 自动抓取最新热榜并更新 articles.json
-# 每整点跑一次（cron 为 UTC，北京=UTC+8，即北京时间每小时整点），保证数据尽量最新
+# 每小时跑两次（cron 为 UTC，北京=UTC+8）：整点 + 23 分错峰。
+# GitHub 的定时任务经常延迟甚至跳过整点那次，第二批次保证数据最多落后约 1 小时
 on:
   schedule:
     - cron: '0 * * * *'
+    - cron: '23 * * * *'
   workflow_dispatch:      # 支持在 GitHub 页面手动点「Run workflow」立即跑一次
 
 permissions:
