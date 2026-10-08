@@ -57,17 +57,24 @@ def main():
 
     arts = [x for x in d["articles"] if x.get("source") != "dailyhot"]   # 先清掉上一轮的
     added = 0
+    diag = []
 
     for route, plat, board in NODES:
         try:
             j = fetch_json(route)
         except Exception as e:
+            msg = f"{type(e).__name__}: {e}"
+            diag.append({"route": route, "plat": plat, "ok": False, "err": msg[:200]})
             print(f"  × {plat:8} {route:14} FAIL {type(e).__name__}")
             continue
         rows = j.get("data") if isinstance(j, dict) else j
         if not isinstance(rows, list) or not rows:
+            diag.append({"route": route, "plat": plat, "ok": False, "err": "无数据",
+                          "rawKeys": list(j.keys())[:8] if isinstance(j, dict) else str(type(j))})
             print(f"  · {plat:8} {route:14} 无数据")
             continue
+        diag.append({"route": route, "plat": plat, "ok": True,
+                     "keys": list(rows[0].keys())[:10] if isinstance(rows[0], dict) else []})
         got = 0
         for idx, it in enumerate(rows):
             if not isinstance(it, dict):
@@ -104,6 +111,9 @@ def main():
     d["total"] = len(arts)
     d["withRealRead"] = sum(1 for x in arts if x.get("hasRealRead"))
     json.dump(d, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    # 诊断：本地访问不到这个 API，只能靠 Actions 跑，把原因写进文件供排查
+    json.dump({"at": time.strftime("%Y-%m-%d %H:%M:%S"), "added": added, "diag": diag},
+              open("data/debug_dailyhot.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"\n完成：开源 API 新增 {added} 条，库内总计 {len(arts)} 条")
 
 
