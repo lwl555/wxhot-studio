@@ -16,8 +16,11 @@ import re
 import ssl
 import html
 import urllib.request
+import urllib.error
 import datetime
 import hashlib
+import time
+import random
 
 # GitHub Actions 的 runner 是 UTC 时区，直接用 now() 会比北京慢 8 小时。
 # 显式用 UTC+8，保证前端看到的时间和本地一致。
@@ -180,15 +183,36 @@ CATEGORY_RULES = [
 ]
 
 
-def fetch(url, retries=3):
+def fetch(url, retries=4):
+    """带退避重试的抓取。tophub 会在短时间内大量请求后限流（返回空/超时），
+    这里用「指数退避 + 抖动」降低被限流概率，提高 CI 一次跑全 98 个节点的成功率。"""
+    last_err = ""
     for i in range(retries):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            req = urllib.request.Request(url, headers={
+                "User-Agent": UA,
+                "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
+                "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            })
             return urllib.request.urlopen(req, timeout=25, context=CTX).read().decode("utf-8", "ignore")
-        except Exception as e:
+        except urllib.error.HTTPError as e:
+            last_err = f"HTTP {e.code}"
+            # 429/503 限流：按 Retry-After 或退避等待后重试
+            if e.code in (429, 503):
+                wait = 5 * (i + 1) + random.uniform(0, 2)
+                print(f"  [限流 {e.code}] {url} 等待 {wait:.1f}s 重试 ({i+1}/{retries})")
+                time.sleep(wait)
+                continue
             if i == retries - 1:
-                print(f"  [FAIL] {url} -> {type(e).__name__}: {e}")
+                print(f"  [FAIL] {url} -> {last_err}")
                 return ""
+        except Exception as e:
+            last_err = f"{type(e).__name__}: {e}"
+            if i == retries - 1:
+                print(f"  [FAIL] {url} -> {last_err}")
+                return ""
+            # 普通超时/连接错误：短退避后重试
+            time.sleep(2 * (i + 1) + random.uniform(0, 1))
     return ""
 
 
@@ -466,14 +490,20 @@ def main():
 
     all_items = []
     for node_id, platform, board, cat in NODES:
+        # 节点间随机停顿，平摊请求、规避 tophub 突发限流（CI runner IP 易被限）
+        if all_items:  # 第一个节点不等待
+            time.sleep(random.uniform(1.2, 2.8))
         print(f"\n→ 抓取 {platform} · {board}")
         all_items.extend(parse_node(node_id, platform, board, cat))
 
     # 开源平台（免 token：GitHub 官方搜索 API + HelloGitHub 月刊）
     print("\n→ 抓取 开源平台 · GitHub（官方 API）")
     all_items.extend(fetch_github_trending(1, "GitHub 本日新热"))
+    time.sleep(2)
     all_items.extend(fetch_github_trending(7, "GitHub 本周新热"))
+    time.sleep(2)
     all_items.extend(fetch_github_trending(30, "GitHub 本月新热"))
+    time.sleep(2)
     print("\n→ 抓取 开源平台 · HelloGitHub 月刊")
     all_items.extend(fetch_hellogithub())
 
