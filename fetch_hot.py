@@ -488,13 +488,36 @@ def main():
     print("热榜数据采集 —— 数据源：tophub.today + GitHub Trending + HelloGitHub")
     print("=" * 56)
 
+    # 预读上一轮数据：用于「节点抓取失败回退」+ 后续封面继承
+    old = {}
+    oldmap = {}
+    old_tophub = {}   # (platform, board) -> [items]，供本次失败回退
+    try:
+        with open(OUT_FILE, encoding="utf-8") as f:
+            old = json.load(f)
+        arts_old = old.get("articles") or []
+        oldmap = {x.get("url"): x for x in arts_old}
+        for x in arts_old:
+            if x.get("source") == "tophub":
+                old_tophub.setdefault((x.get("platform"), x.get("board")), []).append(x)
+    except Exception:
+        pass
+
     all_items = []
     for node_id, platform, board, cat in NODES:
         # 节点间随机停顿，平摊请求、规避 tophub 突发限流（CI runner IP 易被限）
         if all_items:  # 第一个节点不等待
             time.sleep(random.uniform(1.2, 2.8))
         print(f"\n→ 抓取 {platform} · {board}")
-        all_items.extend(parse_node(node_id, platform, board, cat))
+        got = parse_node(node_id, platform, board, cat)
+        if not got:
+            fb = old_tophub.get((platform, board))
+            if fb:
+                print(f"  [回退] {platform}/{board} 本次 0 条，沿用上一轮 {len(fb)} 条")
+                got = [dict(x) for x in fb]
+            else:
+                print(f"  [警告] {platform}/{board} 本次 0 条且无历史可回退")
+        all_items.extend(got)
 
     # 开源平台（免 token：GitHub 官方搜索 API + HelloGitHub 月刊）
     print("\n→ 抓取 开源平台 · GitHub（官方 API）")
@@ -519,14 +542,7 @@ def main():
     # 公众号爆文（真实阅读量）优先置顶
     uniq.sort(key=lambda x: (not x["hasRealRead"], -(x["readCount"] or 0)))
 
-    # 继承上一轮已采集到的封面/摘要：本轮是全新抓取，不继承的话补图成果会被覆盖丢失
-    old = {}
-    try:
-        with open(OUT_FILE, encoding="utf-8") as f:
-            old = json.load(f)
-        oldmap = {x.get("url"): x for x in (old.get("articles") or [])}
-    except Exception:
-        oldmap = {}
+    # 继承上一轮已采集到的封面/摘要（old/oldmap 已在采集前预读，这里直接复用）
     inherited = 0
     for it in uniq:
         o = oldmap.get(it["url"])
