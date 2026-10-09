@@ -398,7 +398,111 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .as-imgrow .as-x{position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);color:#fff;
   border:none;border-radius:50%;width:15px;height:15px;font-size:11px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;line-height:1}
-.as-hint{font-size:10.5px;color:var(--ink-3);margin-top:7px;line-height:1.5}
+.as-hint{font-size:10.5px;color:var(--ink-3);margin-top:8px;line-height:1.5}
+
+/* ══ 豆包风改造：更清爽的顶部状态栏 + 更大留白 + 记账/工具卡片 ══ */
+.as-top{padding:13px 16px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;background:#fff}
+.as-top-l{display:flex;align-items:center;gap:11px;min-width:0}
+.as-av{width:38px;height:38px;background:linear-gradient(135deg,#2f6bff,#1d4ed8);color:#fff;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(29,78,216,.25)}
+.as-name{font-size:15px;font-weight:600;line-height:1.25}
+.as-status{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.as-top-r{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.as-icon{width:32px;height:32px;border-radius:9px;border:none;background:transparent;color:var(--ink-2);
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.14s}
+.as-icon:hover{background:var(--bg-2);color:var(--ink)}
+.as-icon.close{font-size:21px;line-height:1}
+
+/* 长期记忆：单行摘要，点开展开（减少拥挤） */
+.as-mem{padding:0;border-bottom:1px solid var(--line);flex-shrink:0;background:#fbfcfe;
+  overflow:hidden;max-height:42px;transition:max-height .22s ease}
+.as-mem.on{max-height:320px}
+.as-mem-sum{padding:9px 16px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--ink-2)}
+.as-mem-sum .as-mem-chev{margin-left:auto;color:var(--ink-3);font-size:11px;transition:transform .22s}
+.as-mem.on .as-mem-sum .as-mem-chev{transform:rotate(180deg)}
+.as-mem-body{padding:4px 16px 12px}
+.as-mem-clear{display:inline-block;font-size:12px;color:var(--red);cursor:pointer;
+  border:1px solid var(--line);border-radius:7px;padding:3px 10px;transition:.14s}
+.as-mem-clear:hover{background:var(--red-50);border-color:var(--red)}
+
+/* 空态欢迎 + 快捷指令（豆包式建议气泡） */
+.as-welcome{padding:20px 18px 10px;display:flex;flex-direction:column;gap:16px}
+.as-welcome.hide{display:none}
+.as-welcome-h{display:flex;align-items:center;gap:11px}
+.as-welcome-h .as-av{width:42px;height:42px}
+.as-welcome-t{font-size:15px;font-weight:600;line-height:1.3}
+.as-welcome-s{font-size:12.5px;color:var(--ink-3);line-height:1.6;margin-top:3px}
+.as-quick{display:flex;flex-wrap:wrap;gap:8px}
+.as-quick button{padding:8px 13px;border:1px solid var(--line);border-radius:18px;
+  background:#fff;font-size:12.5px;color:var(--ink-2);cursor:pointer;transition:.14s;font-weight:500}
+.as-quick button:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-50)}
+.as-rec{margin:0 14px 4px;padding:11px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg-2);display:none}
+.as-rec.on{display:block}
+
+/* 消息流：更大留白、更柔气泡 */
+.as-log{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.as-msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word}
+.as-msg.u{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+.as-msg.a{align-self:flex-start;background:var(--bg-2);border:1px solid var(--line);
+  border-bottom-left-radius:4px}
+.as-msg.sys{align-self:center;background:transparent;color:var(--ink-3);font-size:11.5px;
+  text-align:center;max-width:100%}
+
+/* 输入区重做：图标化、圆角、留白 */
+.as-in{border-top:1px solid var(--line);padding:12px 16px 14px;flex-shrink:0;background:#fff;
+  transition:background .15s,box-shadow .15s}
+.as-in.drag{background:var(--blue-50);box-shadow:inset 0 0 0 2px var(--blue)}
+.as-imgbtn{width:38px;padding:0;border:1px solid var(--line);background:#fff;border-radius:11px;
+  cursor:pointer;color:var(--ink-2);flex-shrink:0;font-size:18px;display:flex;align-items:center;justify-content:center}
+.as-imgbtn:hover{border-color:var(--blue);color:var(--blue)}
+.as-in-row{display:flex;gap:8px;align-items:stretch}
+#asInput{flex:1;border:1px solid var(--line);border-radius:11px;padding:10px 13px;
+  font-size:13.5px;font-family:inherit;outline:none;min-width:0;background:var(--bg-2)}
+#asInput:focus{border-color:var(--blue);background:#fff}
+.as-send{width:44px;padding:0;background:var(--blue);color:#fff;border:none;border-radius:11px;
+  font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.as-send:hover{background:var(--blue-hover)}
+.as-imgrow{display:none;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+.as-imgrow.on{display:flex}
+
+/* 记账确认卡片（AI 解析后可改账） */
+.as-acc{margin-top:2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.as-acc-h{padding:9px 12px;background:var(--blue-50);color:var(--blue);font-size:12.5px;font-weight:600}
+.as-acc-b{padding:10px 12px}
+.as-acc-r{display:grid;grid-template-columns:52px 1fr;gap:7px 8px;align-items:center;padding:9px 10px;
+  border:1px solid var(--line);border-radius:10px;margin-bottom:9px;position:relative}
+.as-acc-r label{color:var(--ink-3);font-size:12px}
+.as-acc-r input,.as-acc-r select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;
+  font-size:13px;font-family:inherit;outline:none;background:#fff;min-width:0}
+.as-acc-r input:focus,.as-acc-r select:focus{border-color:var(--blue)}
+.as-acc-r .ld-x{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;border:none;
+  border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.as-acc-acts{display:flex;gap:8px;padding:0 12px 12px}
+.as-acc-acts .btn{flex:1;padding:9px;font-size:13px}
+
+/* 工具结果卡片 */
+.as-tool{margin-top:2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.as-tool-h{padding:9px 12px;background:var(--green-50);color:var(--green);font-size:12.5px;font-weight:600}
+.as-tool-b{padding:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;color:var(--ink)}
+.as-tool-b pre{white-space:pre-wrap;font-family:inherit;margin:0}
+
+/* 设置弹窗（模型与密钥） */
+.set-row{margin-bottom:15px}
+.set-row>label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:6px;font-weight:500}
+.set-row input,.set-row select{width:100%;padding:9px 11px;border:1px solid var(--line);
+  border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:#fff}
+.set-row input:focus,.set-row select:focus{border-color:var(--blue)}
+.set-seg{display:flex;gap:8px}
+.set-seg button{flex:1;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fff;
+  font-size:13px;color:var(--ink-2);cursor:pointer;transition:.14s}
+.set-seg button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:500}
+.set-note{font-size:11.5px;color:var(--ink-3);line-height:1.6;margin-top:6px}
+.set-key-mask{font-family:ui-monospace,Consolas,monospace;letter-spacing:1px;font-size:12px;color:var(--ink-3)}
 
 @media(max-width:820px){
   /* 顶栏：单行极简（主流 APP 式）——logo + 右侧图标按钮，高度自适应不再写死 */
@@ -438,7 +542,9 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   .aim{display:none}
   /* 聊天面板：手机上全屏，消息区占满 */
   .as-panel{width:100vw;right:0;border-radius:0}
-  .as-head{padding:12px 16px}
+  .as-top{padding:11px 14px}
+  .as-av{width:34px;height:34px}
+  .as-quick button{padding:9px 12px;font-size:12px}
   /* toast 上移，避开底部导航 */
   .toast{bottom:calc(88px + env(safe-area-inset-bottom))}
 }
@@ -924,35 +1030,100 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 <!-- ═══ AI 智能助手面板 ═══ -->
 <div class="as-mask" id="asMask"></div>
 <aside class="as-panel" id="asPanel">
-  <div class="as-h">
-    <div class="as-h-l">
+  <div class="as-top">
+    <div class="as-top-l">
       <div class="as-av">AI</div>
       <div>
-        <div class="as-t">智能创作助手</div>
-        <div class="as-s" id="asSub">已记住 0 篇 · agnes-3.0-flash · 可看图 · 可查热文</div>
+        <div class="as-name">AI 助手</div>
+        <div class="as-status" id="asStatus">在线 · 默认模型</div>
       </div>
     </div>
-    <div class="as-h-r">
-      <button class="btn btn-g btn-sm" id="asClear" title="清空我的阅读档案">清空档案</button>
-      <span class="x" id="asClose">×</span>
+    <div class="as-top-r">
+      <button class="as-icon" id="asNewChat" title="新对话">＋</button>
+      <button class="as-icon" id="asSettings" title="设置 · 模型与密钥">⚙</button>
+      <button class="as-icon close" id="asClose" title="关闭">×</button>
     </div>
   </div>
 
-  <div class="as-mem" id="asProfile"></div>
-  <div class="as-rec" id="asRec"></div>
+  <div class="as-mem" id="asProfile">
+    <div class="as-mem-sum" id="asMemSum">
+      <span id="asMemTxt">🧠 长期记忆</span>
+      <span class="as-mem-chev">▾</span>
+    </div>
+    <div class="as-mem-body" id="asMemBody"></div>
+  </div>
+
+  <div class="as-welcome" id="asWelcome">
+    <div class="as-welcome-h">
+      <div class="as-av">AI</div>
+      <div>
+        <div class="as-welcome-t">我能帮你创作、记账、查收支</div>
+        <div class="as-welcome-s">发张小票 / 账单截图让我记账，或点下面的快捷指令试试。</div>
+      </div>
+    </div>
+    <div class="as-quick" id="asQuick">
+      <button data-q="帮我记一笔账：午饭 38 元，餐饮">🧾 记账</button>
+      <button data-q="生成本周周报">📊 周报</button>
+      <button data-q="查一下本月收入和支出多少">💰 本月收支</button>
+      <button data-q="根据我的偏好推荐几个选题">✨ 选题推荐</button>
+    </div>
+    <div class="as-rec" id="asRec"></div>
+  </div>
 
   <div class="as-log" id="asLog"></div>
 
   <div class="as-in" id="asIn">
     <div class="as-imgrow" id="asImgRow"></div>
     <div class="as-in-row">
-      <button class="as-imgbtn" id="asImgBtn" title="选图让助手看（也支持 Ctrl+V 粘贴 / 拖进来）">＋图</button>
-      <input id="asInput" placeholder="问我选题、聊写法，或点「＋图」让我看图…" autocomplete="off">
-      <button class="as-send" id="asSend">发送</button>
+      <button class="as-imgbtn" id="asImgBtn" title="选图 / 截图让 AI 看（也支持 Ctrl+V 粘贴 / 拖进来）">🖼</button>
+      <input id="asInput" placeholder="问我选题、聊写法，或发图让我记账…" autocomplete="off">
+      <button class="as-send" id="asSend" title="发送">➤</button>
     </div>
-    <div class="as-hint">🧠 三层记忆（读过什么 / 对话历史 / 你的画像）· 支持看图 · 选题可一键仿写</div>
+    <div class="as-hint">🧠 三层记忆（读过的 / 对话 / 画像）· 支持看图 · 可帮记账 · 可查收支周报</div>
   </div>
 </aside>
+
+<!-- ═══ 模型与密钥设置 ═══ -->
+<div class="mask hide" id="setMask">
+  <div class="modal" style="width:min(480px,100%)">
+    <div class="modal-h">
+      <h3>⚙ 模型与密钥设置</h3>
+      <span class="x" onclick="closeSet()">×</span>
+    </div>
+    <div style="padding:18px 20px">
+      <div class="set-row">
+        <label>使用方式</label>
+        <div class="set-seg" id="setSeg">
+          <button data-m="default" class="on">默认（Agnes 代理·免密钥）</button>
+          <button data-m="custom">自定义端点</button>
+        </div>
+      </div>
+      <div id="setCustom" style="display:none">
+        <div class="set-row">
+          <label>API Base URL</label>
+          <input id="setBase" placeholder="https://api.agnes-ai.cn/v1">
+        </div>
+        <div class="set-row">
+          <label>API Key</label>
+          <input id="setKey" type="password" placeholder="sk-...">
+          <div class="set-note">密钥用 Web Crypto（PBKDF2 + AES-GCM）加密后存本地，不会被明文记录；也可勾选「仅本次会话」不落盘。</div>
+        </div>
+        <div class="set-row">
+          <label>模型名</label>
+          <input id="setModel" placeholder="agnes-2.0-flash">
+        </div>
+        <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-2);margin-top:2px;cursor:pointer">
+          <input type="checkbox" id="setSession"> 仅本次会话使用（不保存到本地）
+        </label>
+      </div>
+      <div class="set-key-mask" id="setMasked"></div>
+      <div style="display:flex;gap:9px;margin-top:6px">
+        <button class="btn btn-p" id="setSave" style="flex:1">保存</button>
+        <button class="btn btn-g" id="setClear">清除自定义</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ═══════════ 配置 ═══════════ */
@@ -964,6 +1135,70 @@ const CFG = {
   demo: "demo",
 };
 const DEMO_IMAGE = "data:image/svg+xml;utf8,";
+
+/* ══ 手动模型密钥：Web Crypto（PBKDF2+AES-GCM）加密后存本地 ══
+   说明：纯前端 SPA 无法做到"绝对安全"（密钥最终要进内存才能用），
+   这里的加密是为了"防本地明文泄露 / 防随手翻 localStorage 看到密钥"，
+   符合"上网查到的标准做法"。自定义端点会由前端直接调用（需对方允许 CORS）。 */
+const KC = {
+  appSecret: "wxhot-studio-ai-key-v1",   // 与随机 salt 一起派生密钥（仅混淆，非真安全边界）
+  storeKey: "wxhot_aikcfg_v1",
+  mem: null,                             // 会话临时态（session-only 时使用）
+  hasSubtle() { return !!(window.crypto && crypto.subtle); },
+  async _derive(salt) {
+    const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(this.appSecret), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+      km, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  },
+  async encryptKey(plain) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const dk = await this._derive(salt);
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, dk, new TextEncoder().encode(plain));
+    return { salt: [...salt], iv: [...iv], ct: [...new Uint8Array(ct)] };
+  },
+  async decryptKey(blob) {
+    const dk = await this._derive(new Uint8Array(blob.salt));
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(blob.iv) }, dk, new Uint8Array(blob.ct));
+    return new TextDecoder().decode(pt);
+  },
+};
+/* 保存配置：默认模式无需密钥；自定义模式加密后落盘（或仅会话） */
+async function saveKeyCfg({ mode, baseUrl = "", apiKey = "", model = "", sessionOnly = false }) {
+  if (sessionOnly) { KC.mem = { mode: "custom", baseUrl, apiKey, model }; localStorage.removeItem(KC.storeKey); return; }
+  KC.mem = null;
+  if (mode === "default") { localStorage.removeItem(KC.storeKey); return; }
+  const cfg = { mode: "custom", baseUrl, model };
+  if (apiKey) cfg.enc = KC.hasSubtle() ? await KC.encryptKey(apiKey) : { plain: apiKey };
+  else { // 没填新密钥：保留已有加密密钥
+    try { const old = JSON.parse(localStorage.getItem(KC.storeKey) || "{}"); if (old.enc) cfg.enc = old.enc; } catch {}
+  }
+  localStorage.setItem(KC.storeKey, JSON.stringify(cfg));
+}
+async function loadKeyCfg() {
+  if (KC.mem) return KC.mem;
+  try {
+    const r = JSON.parse(localStorage.getItem(KC.storeKey) || "null");
+    if (!r) return { mode: "default" };
+    if (r.enc) {
+      try { r.apiKey = KC.hasSubtle() ? await KC.decryptKey(r.enc) : (r.enc.plain || ""); }
+      catch { r.apiKey = ""; }
+    }
+    return r;
+  } catch { return { mode: "default" }; }
+}
+/* 根据配置解析请求端点（默认走 Agnes 代理；自定义走用户端点 + Bearer） */
+async function aiEndpoint() {
+  const cfg = await loadKeyCfg();
+  if (cfg && cfg.mode === "custom" && cfg.baseUrl) {
+    const url = cfg.baseUrl.replace(/\/+$/, "") + "/chat/completions";
+    const headers = { "Content-Type": "application/json" };
+    if (cfg.apiKey) headers["Authorization"] = "Bearer " + cfg.apiKey;
+    return { url, headers, model: cfg.model || AS.model };
+  }
+  return { url: CFG.api, headers: { "Content-Type": "application/json" }, model: AS.model };
+}
 
 /* 数据新鲜度：把绝对时间换成"X 分钟前 / X 小时前"，一眼看出数据有多旧 */
 function agoText(s) {
@@ -2221,7 +2456,7 @@ async function distillMemory(userText, aiText) {
 /* 渲染长期记忆到助手面板：每条可单独删，并标注是「你说过」还是「AI 推测」 */
 function renderProfile() {
   const p = profile();
-  const box = $("#asProfile");
+  const box = $("#asMemBody");
   if (!box) return;
   const chips = [];
   const add = (k, v) => {
@@ -2236,12 +2471,14 @@ function renderProfile() {
   (p.notes || []).forEach(v => add("notes", v));
   add("goal", p.goal);
   if (!chips.length) {
-    box.innerHTML = `<div class="as-mem-t">🧠 长期记忆</div><div class="as-mem-x" style="color:var(--ink-3)">多聊几句，我会自动记住你的题材和风格偏好</div>`;
+    box.innerHTML = `<div class="as-mem-x" style="color:var(--ink-3)">多聊几句，我会自动记住你的题材和风格偏好。</div>`;
     return;
   }
   box.innerHTML =
-    `<div class="as-mem-t">🧠 我记得你 <span class="as-mem-hint">（AI 可能记错，点标签可删）</span></div>` +
-    `<div class="as-mem-chips">${chips.join("")}</div>`;
+    `<div class="as-mem-t">我记得你 <span class="as-mem-hint">（AI 可能记错，点标签可删）</span></div>` +
+    `<div class="as-mem-chips">${chips.join("")}</div>` +
+    `<div style="margin-top:9px"><span class="as-mem-clear" id="asMemClear">清空全部记忆</span></div>`;
+  const clr = $("#asMemClear"); if (clr) clr.onclick = clearAllMemory;
   // 绑定删除
   box.querySelectorAll(".as-mem-chip").forEach(el => {
     el.onclick = () => {
@@ -2302,8 +2539,17 @@ function recommend(n) {
 /* ── UI 渲染 ── */
 function updateAsSub() {
   const c = archive().length;
-  const el = $("#asSub");
-  if (el) el.textContent = `已记住 ${c} 篇 · ${AS.model} · 可看图`;
+  const el = $("#asMemTxt");
+  if (el) el.textContent = `🧠 已记住 ${c} 篇（点开看画像）`;
+  updateAsStatus();
+}
+async function updateAsStatus() {
+  const el = $("#asStatus");
+  if (!el) return;
+  const cfg = await loadKeyCfg();
+  const m = (cfg && cfg.mode === "custom" && cfg.model) ? cfg.model : AS.model;
+  const tag = (cfg && cfg.mode === "custom") ? "自定义端点" : "默认代理";
+  el.textContent = `在线 · ${tag} · ${m}`;
 }
 function asMsg(role, html) {
   const d = document.createElement("div");
@@ -2335,14 +2581,22 @@ function openAs() {
   $("#asPanel").classList.add("on");
   $("#asMask").classList.add("on");
   updateAsSub(); renderAsRec(); renderProfile();
-  if (!$("#asLog").children.length) {
-    asMsg("a", "你好，我是你的创作助手 👋\n\n我能帮你：\n• 推荐选题（会记住你爱看什么）\n• 聊写法、标题、开头\n• 看图分析（点左边 🖼 发图）\n• 挑中意的文章直接进仿写\n\n你平时关注什么题材？");
-  }
+  // 有消息历史就不显示欢迎页（避免拥挤）；空态才展示建议气泡
+  const has = $("#asLog").children.length;
+  $("#asWelcome").classList.toggle("hide", has > 0);
   $("#asInput").focus();
 }
 function closeAs() {
   $("#asPanel").classList.remove("on");
   $("#asMask").classList.remove("on");
+}
+function hideWelcome() { const w = $("#asWelcome"); if (w) w.classList.add("hide"); }
+function scrollLog() { const l = $("#asLog"); if (l) l.scrollTop = l.scrollHeight; }
+function typingEl() {
+  const t = document.createElement("div");
+  t.className = "as-typing";
+  t.innerHTML = "<i></i><i></i><i></i>";
+  return t;
 }
 
 /* ── 看图：支持 选文件 / Ctrl+V 粘贴 / 拖拽 ── */
@@ -2552,11 +2806,12 @@ ${profTxt ? "\n请主动运用以上画像：推荐选题时贴合其关注题�
   hist.forEach(m => msgs.push({ role: m.role === "user" ? "user" : "assistant", content: m.content }));
   msgs.push({ role: "user", content });
 
-  const r = await fetch(CFG.api, {
+  const ep = await aiEndpoint();
+  const r = await fetch(ep.url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: ep.headers,
     body: JSON.stringify({
-      model: AS.model,
+      model: ep.model,
       messages: msgs,
       max_tokens: 800,
       temperature: 0.8,
@@ -2610,28 +2865,202 @@ function renderAsReply(txt) {
   return { html: html + btnHtml, cands };
 }
 
+/* ── 意图识别：记账 / 周报 / 收支查询 / 普通对话 ── */
+function detectIntent(text, hasImg) {
+  const t = text || "";
+  // 有图且（文字提及账/钱，或纯发图）→ 默认按记账处理
+  if (hasImg && (!t.trim() || /账|记|花|收|付|费|金额|小票|账单|发票|报销|多少钱|支出|收入/.test(t))) return "account";
+  if (/记一笔|记一下|记账|帮我记|记个|记帐|记下来|记到账/.test(t)) return "account";
+  if (/周报|日报|报表|本周总结|本月总结|总结一下|生成报告|生成周报|出个周报/.test(t)) return "report";
+  if (/收入多少|支出多少|花了多少|结余|本月收支|这个月.*(收入|支出)|赚了多少|花了多少钱|收支情况|存了多少/.test(t)) return "query";
+  return "chat";
+}
+
+/* ── AI 帮记账：文字 / 图片 → 结构化条目 ── */
+async function aiParseLedger(text, imgs) {
+  const today = bjDate();
+  const sys = `你是记账助手。根据用户文字描述和图片（小票 / 账单 / 支付截图）提取记账条目。
+只输出一个 JSON 数组，不要任何解释或 Markdown 代码块。
+每条格式：{"type":"in"|"out","amount":数字,"category":分类,"note":备注,"date":"YYYY-MM-DD"}
+规则：
+- 收入用 type:"in"（工资、兼职、红包、退款、收款等）；支出用 type:"out"。
+- 金额必须是数字（去掉￥和千分位逗号）。
+- 分类从以下选一个：餐饮、交通、购物、居家、娱乐、医疗、学习、工资、兼职、红包、其他。
+- 日期默认 ${today}；能从图片 / 文字看出具体日期就用那天。
+- 备注写简短说明。
+- 没有可读条目就返回空数组 []。
+今天日期是 ${today}。`;
+  let content;
+  if (imgs.length) {
+    content = [{ type: "text", text: text || "请识别这张图片里的消费 / 收支并帮我记账。" }];
+    imgs.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
+  } else {
+    content = text;
+  }
+  const ep = await aiEndpoint();
+  const r = await fetch(ep.url, {
+    method: "POST", headers: ep.headers,
+    body: JSON.stringify({ model: ep.model, messages: [{ role: "system", content: sys }, { role: "user", content }], max_tokens: 600, temperature: 0 }),
+  });
+  if (!r.ok) {
+    let detail = "";
+    try { const j = await r.json(); detail = (j?.error?.message || j?.message || j?.error || "").toString().slice(0, 200); } catch {}
+    const e = new Error("接口 " + r.status); e.status = r.status; e.detail = detail; e.hadImg = imgs.length > 0; throw e;
+  }
+  const j = await r.json();
+  const raw = (j.choices && j.choices[0].message.content || "").trim();
+  const m = raw.match(/\[[\s\S]*\]/);
+  if (!m) return [];
+  try {
+    const arr = JSON.parse(m[0]);
+    return Array.isArray(arr) ? arr.filter(x => x && typeof x.amount === "number" && x.amount > 0).slice(0, 8) : [];
+  } catch { return []; }
+}
+
+/* 渲染可编辑的记账确认卡片（支持改账 / 删行） */
+function renderAccCard(entries) {
+  const wrap = document.createElement("div");
+  wrap.className = "as-msg a";
+  const rows = entries.map((e, i) => `
+    <div class="as-acc-r" data-i="${i}">
+      <label>类型</label>
+      <select data-f="type">
+        <option value="out" ${e.type !== "in" ? "selected" : ""}>支出</option>
+        <option value="in" ${e.type === "in" ? "selected" : ""}>收入</option>
+      </select>
+      <label>分类</label>
+      <input data-f="category" value="${esc(e.category || "其他")}">
+      <label>金额</label>
+      <input data-f="amount" type="number" step="0.01" value="${esc(e.amount)}">
+      <label>日期</label>
+      <input data-f="date" type="date" value="${esc(e.date || bjDate())}">
+      <label>备注</label>
+      <input data-f="note" value="${esc(e.note || "")}">
+      <button class="ld-x" data-del="${i}" title="删除这条">×</button>
+    </div>`).join("");
+  wrap.innerHTML = `
+    <div class="as-acc">
+      <div class="as-acc-h">🧾 AI 识别到 ${entries.length} 笔，确认或修改后记账</div>
+      <div class="as-acc-b">${rows}</div>
+      <div class="as-acc-acts">
+        <button class="btn btn-p" id="asAccOk">确认记账</button>
+        <button class="btn btn-g" id="asAccCancel">取消</button>
+      </div>
+    </div>`;
+  $("#asLog").appendChild(wrap); scrollLog();
+  wrap.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
+    b.closest(".as-acc-r").remove();
+    const n = wrap.querySelectorAll(".as-acc-r").length;
+    wrap.querySelector(".as-acc-h").textContent = `🧾 还剩 ${n} 笔，确认或修改后记账`;
+  });
+  wrap.querySelector("#asAccOk").onclick = () => {
+    const rowsArr = [...wrap.querySelectorAll(".as-acc-r")];
+    if (!rowsArr.length) { asMsg("sys", "已全部删除，无账目可记。"); wrap.remove(); return; }
+    let cnt = 0;
+    rowsArr.forEach(r => {
+      const get = f => r.querySelector(`[data-f="${f}"]`).value;
+      const a = parseFloat(get("amount"));
+      if (!a || a <= 0) return;
+      EFF.ledger.push({
+        t: get("type") === "in" ? "in" : "out",
+        a: Math.round(a * 100) / 100,
+        c: (get("category") || "").trim() || "其他",
+        n: (get("note") || "").trim(),
+        d: get("date") || bjDate(), ts: Date.now(),
+      });
+      cnt++;
+    });
+    ledSave(); ledRender();
+    wrap.remove();
+    asMsg("a", `✅ 已记 ${cnt} 笔到「效率 · 记账」，可在效率页查看 / 导出 CSV。`);
+    toast("已记账 " + cnt + " 笔");
+  };
+  wrap.querySelector("#asAccCancel").onclick = () => { wrap.remove(); asMsg("sys", "已取消记账。"); };
+}
+
+/* AI 记账主流程 */
+async function doAccount(text, imgs) {
+  if (AS.busy) return;
+  AS.busy = true;
+  if (imgs.length) {
+    const prev = document.createElement("div");
+    prev.className = "as-img-in";
+    prev.innerHTML = imgs.map(d => `<img src="${d}">`).join("");
+    $("#asLog").appendChild(prev);
+  }
+  if (text) asMsg("u", esc(text));
+  hideWelcome();
+  const tip = typingEl();
+  $("#asLog").appendChild(tip); scrollLog();
+  chatPush("user", text || "[图片]");
+  try {
+    const entries = await aiParseLedger(text, imgs);
+    tip.remove();
+    if (!entries || !entries.length) {
+      asMsg("a", "没从这段话 / 图片里看出能记的账。你可以直接说：“午饭 38 元”“收到工资 8000”，或发一张小票截图，我来帮你记。");
+    } else {
+      renderAccCard(entries);
+    }
+  } catch (e) {
+    tip.remove();
+    asMsg("a", humanErr(e));
+  } finally {
+    AS.busy = false;
+  }
+}
+
+/* ── AI 调用效率工具：周报 / 日报 / 本月收支 ── */
+function showToolCard(title, txt) {
+  const d = document.createElement("div");
+  d.className = "as-msg a";
+  d.innerHTML = `<div class="as-tool"><div class="as-tool-h">${esc(title)}</div><div class="as-tool-b"><pre>${esc(txt)}</pre></div></div>`;
+  $("#asLog").appendChild(d); scrollLog();
+}
+function doReport(text) {
+  const scope = /日报|今天|今日|这一天/.test(text || "") ? "day" : "week";
+  buildReport(scope);
+  showToolCard(scope === "day" ? "📊 日报" : "📊 周报", lastReport);
+  toast("已生成" + (scope === "day" ? "日报" : "周报"));
+}
+function doLedgerQuery() {
+  const month = bjMonth();
+  const led = EFF.ledger.filter(x => (x.d || "").startsWith(month));
+  const inM = led.filter(x => x.t === "in").reduce((s, x) => s + x.a, 0);
+  const outM = led.filter(x => x.t === "out").reduce((s, x) => s + x.a, 0);
+  const bal = inM - outM;
+  const byCat = {};
+  led.filter(x => x.t === "out").forEach(x => { const k = x.c || "其他"; byCat[k] = (byCat[k] || 0) + x.a; });
+  const top = Object.entries(byCat).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const txt = `📅 ${month} 至今（共 ${led.length} 笔）\n收入 ¥${fmt2(inM)} ｜ 支出 ¥${fmt2(outM)} ｜ 结余 ¥${fmt2(bal)}\n最大支出：${top.length ? top.map(([c, v]) => c + " ¥" + fmt2(v)).join("、") : "无"}`;
+  showToolCard("💰 本月收支", txt);
+}
+
 async function sendAs() {
   const inp = $("#asInput");
   const text = inp.value.trim();
   if ((!text && !AS.imgs.length) || AS.busy) return;
-  AS.busy = true;
-  const pendingImgs = AS.imgs.slice();   // 先留底！下面 AS.imgs 会被清空
+  const pendingImgs = AS.imgs.slice();
+  // 意图路由：记账 / 周报 / 收支查询 走专用流程
+  const intent = detectIntent(text, pendingImgs.length > 0);
+  if (intent === "account") { await doAccount(text, pendingImgs); return; }
+  if (intent === "report")  { doReport(text); return; }
+  if (intent === "query")   { doLedgerQuery(text); return; }
 
-  if (AS.imgs.length) {
+  AS.busy = true;
+  if (pendingImgs.length) {
     const prev = document.createElement("div");
     prev.className = "as-img-in";
-    prev.innerHTML = AS.imgs.map(d => `<img src="${d}">`).join("");
+    prev.innerHTML = pendingImgs.map(d => `<img src="${d}">`).join("");
     $("#asLog").appendChild(prev);
   }
   if (text) asMsg("u", esc(text));
   inp.value = "";
   AS.imgs = []; renderAsImgs();
+  hideWelcome();
 
-  const tip = document.createElement("div");
-  tip.className = "as-typing";
-  tip.innerHTML = "<i></i><i></i><i></i>";
+  const tip = typingEl();
   $("#asLog").appendChild(tip);
-  $("#asLog").scrollTop = $("#asLog").scrollHeight;
+  scrollLog();
 
   try {
     const doSearch = /[一-龥]/.test(text) && (text.length >= 3 || /微信|公众号|文章|热点|热文|选题|最新|查|搜|找|资讯|推荐|筛|阅读量/.test(text));
@@ -2681,9 +3110,20 @@ function humanErr(e) {
            `试一下：换一张普通照片，或者把长截图裁一段再发。仅凭文字描述我也能帮你。`;
   }
   if (st === 429) return `⏱ 请求太频繁了，免费档一分钟约 20 次。等十几秒再问一次就行。`;
+  if (st === 401) return `🔑 密钥无效（401）。请到右上角 ⚙ 设置里检查 API Key 是否正确，或换回「默认代理」。`;
   if (st === 400) return `⚠️ 请求没被接受（400）。${d ? "\n\n原因：" + esc(d) : ""}`;
   if (st >= 500) return `🔧 服务端开小差了（${st}），稍等一会儿重试。`;
   return `⚠️ 调用失败：${esc(e?.message || "未知错误")}`;
+}
+
+/* 清空全部记忆（阅读档案 + 对话历史 + 用户画像） */
+function clearAllMemory() {
+  archiveSave([]);
+  try { localStorage.removeItem(AS.chatKey); localStorage.removeItem(AS.profileKey); } catch {}
+  updateAsSub(); renderAsRec(); renderProfile();
+  $("#asLog").innerHTML = "";
+  $("#asWelcome").classList.remove("hide");
+  asMsg("sys", "已清空全部记忆（阅读档案 + 对话历史 + 用户画像），我会从零重新了解你。");
 }
 
 /* ── 事件绑定 ── */
@@ -2692,15 +3132,75 @@ $("#asClose").onclick = closeAs;
 $("#asMask").onclick = closeAs;
 $("#asSend").onclick = sendAs;
 $("#asImgBtn").onclick = pickImage;
-$("#asClear").onclick = () => {
-  archiveSave([]);
-  try { localStorage.removeItem(AS.chatKey); localStorage.removeItem(AS.profileKey); } catch {}
-  updateAsSub(); renderAsRec(); renderProfile();
-  asMsg("sys", "已清空全部记忆（阅读档案 + 对话历史 + 用户画像），我会从零重新了解你。");
+$("#asNewChat").onclick = () => {
+  $("#asLog").innerHTML = "";
+  $("#asWelcome").classList.remove("hide");
+  asMsg("sys", "已开启新对话（记忆与档案保留）。");
+  $("#asInput").focus();
 };
+$("#asSettings").onclick = openSet;
+$("#asMemSum").onclick = () => $("#asProfile").classList.toggle("on");
+/* 快捷指令：填入输入框并直接发送 */
+$("#asQuick").querySelectorAll("button").forEach(b => b.onclick = () => {
+  $("#asInput").value = b.dataset.q;
+  sendAs();
+});
+$("#asClear") && ($("#asClear").onclick = clearAllMemory);
 $("#asInput").addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAs(); }
 });
+
+/* ── 设置弹窗：模型与密钥 ── */
+function openSet() {
+  loadSetForm();
+  $("#setMask").classList.remove("hide");
+}
+function closeSet() { $("#setMask").classList.add("hide"); }
+async function loadSetForm() {
+  const cfg = await loadKeyCfg();
+  const mode = (cfg && cfg.mode === "custom") ? "custom" : "default";
+  $("#setSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.m === mode));
+  $("#setCustom").style.display = mode === "custom" ? "block" : "none";
+  $("#setBase").value = (cfg && cfg.baseUrl) || "";
+  $("#setModel").value = (cfg && cfg.model) || "";
+  $("#setKey").value = "";
+  $("#setSession").checked = false;
+  renderSetMasked(cfg);
+}
+function renderSetMasked(cfg) {
+  const el = $("#setMasked"); if (!el) return;
+  if (cfg && cfg.mode === "custom" && cfg.apiKey) {
+    el.textContent = "当前密钥：" + "•".repeat(Math.min(cfg.apiKey.length, 14)) + " （已加密保存）";
+  } else el.textContent = "";
+}
+$("#setSeg").querySelectorAll("button").forEach(b => b.onclick = () => {
+  $("#setSeg").querySelectorAll("button").forEach(x => x.classList.remove("on"));
+  b.classList.add("on");
+  $("#setCustom").style.display = b.dataset.m === "custom" ? "block" : "none";
+});
+$("#setSave").onclick = async () => {
+  const mode = $("#setSeg").querySelector(".on").dataset.m;
+  if (mode === "default") {
+    await saveKeyCfg({ mode: "default" });
+    toast("已恢复默认（Agnes 代理）");
+  } else {
+    const base = $("#setBase").value.trim();
+    const key = $("#setKey").value.trim();
+    const model = $("#setModel").value.trim();
+    if (!base) { toast("请填 API Base URL"); return; }
+    await saveKeyCfg({ mode: "custom", baseUrl: base, apiKey: key, model, sessionOnly: $("#setSession").checked });
+    toast($("#setSession").checked ? "本次会话已启用自定义模型" : "已保存自定义模型配置");
+  }
+  await updateAsStatus();
+  closeSet();
+};
+$("#setClear").onclick = async () => {
+  localStorage.removeItem(KC.storeKey); KC.mem = null;
+  await saveKeyCfg({ mode: "default" });
+  loadSetForm();
+  await updateAsStatus();
+  toast("已清除自定义配置");
+};
 
 /* Ctrl+V 粘贴图片 */
 $("#asInput").addEventListener("paste", e => {
