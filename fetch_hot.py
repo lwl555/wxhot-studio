@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 热榜数据采集器
-数据源：今日热榜 tophub.today（免费、免 key、每日更新、含真实阅读量）
+数据源：
+  1) 今日热榜 tophub.today —— 微信/微博/知乎/抖音等 30+ 平台（免费、免 key、含真实阅读量）
+  2) GitHub 官方搜索 API —— 开源热门（最近创建 + star 排序，免 token）
+  3) HelloGitHub 月刊 RSS + 详情页 —— 精选开源项目（含中文简介）
 
-已验证可用的节点：
-  /n/WnBe01o371  微信24h热文榜   → 带真实阅读量（10.0万 / 8.7万）
-  /c/wxmp       公众号频道       → 多个公众号维度榜单
-
-输出：data/articles.json
+输出：data/articles.json（含 fetchLog 诊断字段）
 """
 
 import json
@@ -316,39 +315,38 @@ def build_item(title, url, platform, board, category, desc, reads, reads_text, s
     }
 
 
-def fetch_github_trending(since=""):
-    """GitHub 官方热门榜（免 key，纯网页解析）。since: '' / 'weekly' / 'monthly'"""
-    label = {"": "GitHub 今日热门", "weekly": "GitHub 周热门", "monthly": "GitHub 月热门"}[since]
-    url = "https://github.com/trending" + ("?since=" + since if since else "")
-    page = fetch(url)
-    if not page:
-        return []
-    arts = re.findall(r'<article class="Box-row">(.*?)</article>', page, re.S)
-    items = []
-    for art in arts:
-        m = re.search(r'<h2[^>]*>\s*<a href="/([^"]+)"', art)
-        if not m:
-            continue
-        repo = m.group(1).strip("/")
-        if repo.count("/") != 1:
-            continue
-        desc = ""
-        d = re.search(r'<p class="[^"]*col-9[^"]*">\s*(.*?)\s*</p>', art, re.S)
-        if d:
-            desc = html.unescape(re.sub("<[^>]+>", "", d.group(1))).strip()
-        lang = ""
-        l = re.search(r'itemprop="programmingLanguage">([^<]+)<', art)
-        if l:
-            lang = l.group(1).strip()
-        stars = 0
-        s = re.search(r'/stargazers">\s*([\d,]+)\s*<', art)
-        if s:
-            stars = parse_star(s.group(1))
-        title = repo + ((" · " + lang) if lang else "")
-        items.append(build_item(
-            title, "https://github.com/" + repo, "GitHub", label, "科技数码",
-            desc, stars, ("★" + fmt_star(stars)) if stars else "—", "github"))
-    print(f"  [GitHub/{label}] 抓到 {len(items)} 个仓库")
+FETCH_LOG = []   # 记录各开源源抓取状态，随 articles.json 一起输出，便于远程排查
+
+def fetch_github_trending(since_days, label):
+    """GitHub 官方搜索 API：取「最近 N 天创建、按 star 排序」的仓库，作为开源热门代理。
+    免 token（非认证限额 10 次/分钟，每小时跑几次足够）。"""
+    since = (datetime.datetime.utcnow() - datetime.timedelta(days=since_days)).strftime("%Y-%m-%d")
+    url = (f"https://api.github.com/search/repositories?q=created:>{since}"
+           f"&sort=stars&order=desc&per_page=25")
+    txt = fetch(url)
+    ok = bool(txt)
+    items, note = [], ""
+    if txt:
+        try:
+            data = json.loads(txt)
+            if "items" not in data:
+                note = (data.get("message") or "no items")[:80]
+            for it in (data.get("items") or []):
+                repo = it.get("full_name", "")
+                if not repo or repo.count("/") != 1:
+                    continue
+                desc = (it.get("description") or "").strip()
+                lang = it.get("language") or ""
+                stars = it.get("stargazers_count") or 0
+                title = repo + ((" · " + lang) if lang else "")
+                items.append(build_item(
+                    title, it.get("html_url", "https://github.com/" + repo),
+                    "GitHub", label, "科技数码", desc, stars,
+                    ("★" + fmt_star(stars)) if stars else "—", "github"))
+        except Exception as e:
+            note = f"json err: {e}"
+    FETCH_LOG.append({"source": "GitHub/" + label, "fetched": ok, "items": len(items), "note": note})
+    print(f"  [GitHub/{label}] 抓到 {len(items)} 个仓库" + (f"（{note}）" if note else ""))
     return items
 
 
@@ -360,14 +358,14 @@ def fetch_hellogithub():
     if m:
         vol = m.group(1)
     if not vol:
+        FETCH_LOG.append({"source": "HelloGitHub/月刊", "fetched": bool(rss),
+                          "items": 0, "note": "rss 未解析到 volume"})
         return []
     page = fetch(f"https://hellogithub.com/periodical/volume/{vol}")
     if not page:
+        FETCH_LOG.append({"source": "HelloGitHub/月刊", "fetched": False,
+                          "items": 0, "note": f"v{vol} 页面为空"})
         return []
-    items = []
-    seen = set()
-    links = list(re.finditer(
-        r'<a href="(https://github\.com/[\w.-]+/[\w.-]+)">([^<]+)</a>', page))
     for j, lm in enumerate(links):
         repo = lm.group(1).rstrip("/")
         name = html.unescape(lm.group(2)).strip()
@@ -391,6 +389,8 @@ def fetch_hellogithub():
         items.append(build_item(
             name, repo, "HelloGitHub", "HelloGitHub 月刊", "科技数码",
             desc, stars, ("★" + fmt_star(stars)) if stars else "—", "hellogithub"))
+    FETCH_LOG.append({"source": "HelloGitHub/月刊", "fetched": True,
+                      "items": len(items), "note": f"v{vol}"})
     print(f"  [HelloGitHub 月刊 v{vol}] 抓到 {len(items)} 个项目")
     return items
 
@@ -405,11 +405,11 @@ def main():
         print(f"\n→ 抓取 {platform} · {board}")
         all_items.extend(parse_node(node_id, platform, board, cat))
 
-    # 开源平台（免费、免 key，GitHub Actions 境外环境可直连）
-    print("\n→ 抓取 开源平台 · GitHub Trending")
-    all_items.extend(fetch_github_trending(""))
-    all_items.extend(fetch_github_trending("weekly"))
-    all_items.extend(fetch_github_trending("monthly"))
+    # 开源平台（免 token：GitHub 官方搜索 API + HelloGitHub 月刊）
+    print("\n→ 抓取 开源平台 · GitHub（官方 API）")
+    all_items.extend(fetch_github_trending(1, "GitHub 本日新热"))
+    all_items.extend(fetch_github_trending(7, "GitHub 本周新热"))
+    all_items.extend(fetch_github_trending(30, "GitHub 本月新热"))
     print("\n→ 抓取 开源平台 · HelloGitHub 月刊")
     all_items.extend(fetch_hellogithub())
 
@@ -464,9 +464,10 @@ def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     payload = {
         "updatedAt": now_bj(),
-        "source": "tophub.today",
+        "source": "tophub.today + GitHub API + HelloGitHub",
         "total": len(uniq),
         "withRealRead": sum(1 for i in uniq if i["hasRealRead"]),
+        "fetchLog": FETCH_LOG,
         "articles": uniq,
     }
     with open(OUT_FILE, "w", encoding="utf-8") as f:
