@@ -652,6 +652,79 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   .ld-form select,.ld-form input{width:100%!important}
   .ld-form .btn{width:100%}
 }
+/* ── 预算卡 ── */
+.ld-budget{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:16px}
+.ld-budget-t{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ld-budget-t .lt{font-size:13px;font-weight:600;color:var(--ink-2)}
+.ld-budget-set{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)}
+.ld-budget-set input{width:92px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px}
+.ld-budget-bar{height:10px;background:var(--bg-2);border-radius:6px;overflow:hidden;margin:8px 0 6px}
+.ld-budget-fill{height:100%;background:var(--green);border-radius:6px;transition:.2s}
+.ld-budget-fill.warn{background:var(--amber)}
+.ld-budget-fill.over{background:var(--red)}
+.ld-budget-msg{font-size:12.5px;color:var(--ink-3)}
+.ld-budget-msg b{color:var(--ink-2)}
+.ld-budget-msg .over{color:var(--red);font-weight:600}
+.ld-budget-msg .ok{color:var(--green);font-weight:600}
+/* ── 图表 ── */
+.ld-charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.ld-chart{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px}
+.ld-chart-t{font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+.ld-chart svg{width:100%;height:auto;display:block}
+.ld-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:11.5px;color:var(--ink-2)}
+.ld-legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
+/* ── 分类快捷 ── */
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.cat-chip{padding:4px 11px;border:1px solid var(--line-2);border-radius:16px;font-size:12.5px;color:var(--ink-2);background:#fff;transition:.14s}
+.cat-chip:hover{border-color:var(--blue);color:var(--blue)}
+.cat-chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+/* ── 日历 ── */
+.cal{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:16px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-h .ct{font-size:15px;font-weight:600}
+.cal-nav{display:flex;gap:6px;align-items:center}
+.cal-nav button{padding:5px 12px;border:1px solid var(--line);border-radius:7px;font-size:13px;color:var(--ink-2);background:#fff}
+.cal-nav button:hover{border-color:var(--blue);color:var(--blue)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-wd{text-align:center;font-size:11.5px;color:var(--ink-3);padding:4px 0}
+.cal-cell{position:relative;min-height:54px;border:1px solid var(--line);border-radius:8px;padding:6px 7px;font-size:12px;cursor:pointer;transition:.14s;background:#fff;overflow:hidden}
+.cal-cell:hover{border-color:var(--blue);background:var(--blue-50)}
+.cal-cell.dim{color:var(--ink-3);background:var(--bg-2)}
+.cal-cell.today{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.cal-cell.sel{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue) inset;background:var(--blue-50)}
+.cal-cell .cd{font-weight:600;font-size:12.5px}
+.cal-cell .cin{color:var(--green);font-size:10.5px;line-height:1.3}
+.cal-cell .cout{color:var(--red);font-size:10.5px;line-height:1.3}
+.cal-cell .cdot{position:absolute;right:7px;top:7px;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.cal-detail{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:16px}
+.cal-detail-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-detail-h .dt{font-size:14px;font-weight:600}
+.cal-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.cal-quick select,.cal-quick input{padding:7px 9px;border:1px solid var(--line);border-radius:7px;font-size:12.5px}
+.cal-quick #calAmt{width:92px}.cal-quick #calCat{width:118px}.cal-quick #calNote{flex:1;min-width:100px}
+.cal-sec-t{font-size:12.5px;font-weight:600;color:var(--ink-2);margin:12px 0 7px}
+/* ── 便签 ── */
+.notes-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.notes-bar .nb-t{font-size:13px;color:var(--ink-3)}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.note-card{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 13px;display:flex;flex-direction:column;min-height:120px;position:relative}
+.note-card.pinned{border-color:var(--blue);box-shadow:0 1px 4px rgba(29,78,216,.12)}
+.note-card.done .nc-text{text-decoration:line-through;color:var(--ink-3)}
+.note-card .nc-text{font-size:13.5px;line-height:1.6;flex:1;white-space:pre-wrap;word-break:break-word}
+.note-card textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:7px;padding:8px;font-family:inherit;font-size:13.5px;resize:vertical}
+.note-card .nc-bar{display:flex;align-items:center;gap:4px;margin-top:10px;flex-wrap:wrap}
+.note-card .nc-bar button{padding:3px 8px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;color:var(--ink-2);background:#fff}
+.note-card .nc-bar button:hover{border-color:var(--blue);color:var(--blue)}
+.note-card .nc-bar .pin{color:var(--blue);border-color:#dbeafe}
+.note-card .nc-date{font-size:11px;color:var(--ink-3);margin-top:6px}
+.note-add{border:1px dashed var(--line-2);border-radius:var(--r-lg);display:grid;place-items:center;min-height:120px;color:var(--ink-3);cursor:pointer;font-size:13px;background:var(--bg)}
+.note-add:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-50)}
+.note-swatches{display:flex;gap:5px;margin-top:8px}
+.note-swatches i{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent}
+.note-swatches i.on{border-color:var(--ink-2)}
+@media(max-width:560px){
+  .ld-charts{grid-template-columns:1fr}
+}
 /* AI 检索到的相关热文卡片 */
 .as-src{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
 .as-src-h{font-size:12px;color:var(--ink-3);margin-bottom:7px;font-weight:600}
@@ -760,6 +833,8 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   <div class="page" id="pg-eff">
     <div class="eff-tabs">
       <button class="on" data-ef="ledger">记账</button>
+      <button data-ef="calendar">日历</button>
+      <button data-ef="notes">便签</button>
       <button data-ef="tasks">任务</button>
       <button data-ef="report">报表</button>
     </div>
@@ -772,6 +847,26 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
         <div class="stat"><div class="k">本月结余</div><div class="v" id="ldBal">0</div></div>
         <div class="stat"><div class="k">本月笔数</div><div class="v" id="ldCnt">0</div></div>
       </div>
+
+      <!-- 预算 -->
+      <div class="ld-budget">
+        <div class="ld-budget-t">
+          <span class="lt">本月预算</span>
+          <span class="ld-budget-set">¥<input id="budInput" type="number" min="0" step="100" placeholder="设置"><button class="btn btn-g btn-sm" id="budSave">设定</button></span>
+        </div>
+        <div class="ld-budget-bar"><div class="ld-budget-fill" id="budFill" style="width:0%"></div></div>
+        <div class="ld-budget-msg" id="budMsg">未设置预算</div>
+      </div>
+
+      <!-- 图表 -->
+      <div class="ld-charts">
+        <div class="ld-chart"><div class="ld-chart-t">近 6 月收支趋势</div><div id="chTrend"></div></div>
+        <div class="ld-chart"><div class="ld-chart-t">本月支出分类</div><div id="chCat"></div><div class="ld-legend" id="chCatLeg"></div></div>
+      </div>
+
+      <!-- 分类快捷 -->
+      <div class="cat-chips" id="catChips"></div>
+
       <div class="ld-form">
         <select id="ldType"><option value="in">收入</option><option value="out">支出</option></select>
         <input id="ldAmt" type="number" min="0.01" step="0.01" placeholder="金额 ¥">
@@ -783,6 +878,22 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
       <div class="ld-list-h"><span class="out-t">流水（最近 30 条）</span>
         <button class="btn btn-g btn-sm" id="ldExport">导出 CSV</button></div>
       <div id="ldList"></div>
+    </div>
+
+    <!-- 日历 -->
+    <div class="ef-b" id="ef-calendar">
+      <div class="cal">
+        <div class="cal-h">
+          <span class="ct" id="calTitle">—</span>
+          <span class="cal-nav">
+            <button id="calPrev">‹</button>
+            <button id="calToday">今天</button>
+            <button id="calNext">›</button>
+          </span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="cal-detail" id="calDetail"><div class="empty-tip"><div class="t">点选日期</div><div class="s">点上方某一天，查看 / 补记当天的账目与便签</div></div></div>
     </div>
 
     <!-- 任务 -->
@@ -801,6 +912,15 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
         <button class="btn btn-p" id="tkAdd">添加任务</button>
       </div>
       <div id="tkList"></div>
+    </div>
+
+    <!-- 便签 -->
+    <div class="ef-b" id="ef-notes">
+      <div class="notes-bar">
+        <span class="nb-t" id="notesCount">—</span>
+        <button class="btn btn-p btn-sm" id="noteAdd">+ 新建便签</button>
+      </div>
+      <div class="notes-grid" id="notesGrid"></div>
     </div>
 
     <!-- 报表 -->
@@ -2218,7 +2338,7 @@ function ledRender() {
     </div>`).join("")
     : '<div class="empty-tip"><div class="t">还没有记录</div><div class="s">记第一笔收入或支出试试</div></div>';
   $("#ldList").querySelectorAll(".ld-x").forEach(b => b.onclick = () => {
-    EFF.ledger.splice(+b.dataset.i, 1); ledSave(); ledRender();
+    EFF.ledger.splice(+b.dataset.i, 1); ledSave(); ledRefresh();
   });
 }
 $("#ldAdd").onclick = () => {
@@ -2228,7 +2348,7 @@ $("#ldAdd").onclick = () => {
     c: $("#ldCat").value.trim(), n: $("#ldNote").value.trim(), d: bjDate(), ts: Date.now() });
   ledSave();
   $("#ldAmt").value = ""; $("#ldNote").value = "";
-  ledRender(); toast("已记账");
+  ledRefresh(); toast("已记账");
 };
 $("#ldExport").onclick = () => {
   const head = "日期,类型,分类,金额,备注\n";
@@ -2335,14 +2455,201 @@ $("#rpCopy").onclick = () => {
   copyText(lastReport, "报表已复制");
 };
 
+/* ── 预算 / 图表 / 日历 / 便签 ── */
+EFF.notesKey = "wxhot_notes_v1";
+EFF.budgetKey = "wxhot_budget_v1";
+EFF.notes = [];
+EFF.budget = 0;
+function notesLoad(){ try{ EFF.notes = JSON.parse(localStorage.getItem(EFF.notesKey))||[]; }catch(e){ EFF.notes=[]; } }
+function notesSave(){ try{ localStorage.setItem(EFF.notesKey, JSON.stringify(EFF.notes.slice(-500))); }catch(e){} }
+function budgetLoad(){ const v = parseFloat(localStorage.getItem(EFF.budgetKey)); EFF.budget = isNaN(v)?0:v; }
+
+const IN_CATS = ["工资","兼职","红包","理财","退款","收款","其他收入"];
+const OUT_CATS = ["餐饮","交通","购物","居家","娱乐","医疗","学习","人情","其他"];
+
+function renderCatChips(){
+  const all = [...IN_CATS, ...OUT_CATS];
+  $("#catChips").innerHTML = all.map(c => `<button class="cat-chip" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+  $("#catChips").querySelectorAll(".cat-chip").forEach(b => b.onclick = () => {
+    $("#ldCat").value = b.dataset.c;
+    $("#catChips").querySelectorAll(".cat-chip").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+  });
+}
+
+function renderBudget(){
+  const month = bjMonth();
+  let outM = 0;
+  EFF.ledger.forEach(x => { if(x.t==="out" && (x.d||"").startsWith(month)) outM += x.a; });
+  const bud = EFF.budget;
+  if(!bud){ $("#budMsg").textContent = "未设置预算，点右侧设定本月预算"; $("#budFill").style.width="0%"; $("#budFill").className="ld-budget-fill"; $("#budInput").value=""; return; }
+  const pct = Math.min(100, outM/bud*100);
+  const fill = $("#budFill"); fill.style.width = pct+"%";
+  fill.className = "ld-budget-fill" + (outM>bud?" over":(pct>=80?" warn":""));
+  const left = bud - outM;
+  if(left>=0) $("#budMsg").innerHTML = `本月已花 <b>¥${fmt2(outM)}</b> ／ 预算 ¥${fmt2(bud)} ｜ 剩余 <b class="ok">¥${fmt2(left)}</b>（${Math.round(pct)}%）`;
+  else $("#budMsg").innerHTML = `本月已超支 <b class="over">¥${fmt2(-left)}</b>（预算 ¥${fmt2(bud)}，已花 ¥${fmt2(outM)}）`;
+}
+$("#budSave").onclick = () => {
+  const v = parseFloat($("#budInput").value);
+  if(isNaN(v)||v<0){ toast("请填有效预算"); return; }
+  EFF.budget = v; localStorage.setItem(EFF.budgetKey, v); renderBudget(); toast("预算已设定");
+};
+
+function renderCharts(){
+  const months = [];
+  const now = new Date(bjNow().slice(0,10)+"T00:00:00+08:00");
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")); }
+  const inM = months.map(m=>EFF.ledger.filter(x=>x.t==="in"&&(x.d||"").startsWith(m)).reduce((s,x)=>s+x.a,0));
+  const outM = months.map(m=>EFF.ledger.filter(x=>x.t==="out"&&(x.d||"").startsWith(m)).reduce((s,x)=>s+x.a,0));
+  const maxV = Math.max(1, ...inM, ...outM);
+  const W=320,H=150, bw=15, gap=10;
+  const svg = [`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`];
+  svg.push(`<line x1="0" y1="${H-18}" x2="${W}" y2="${H-18}" stroke="#e5e7eb" stroke-width="1"/>`);
+  months.forEach((m,i)=>{
+    const x = 14 + i*(bw*2+gap);
+    const ih = inM[i]/maxV*(H-40), oh = outM[i]/maxV*(H-40);
+    const yb = H-18;
+    svg.push(`<rect x="${x}" y="${yb-ih}" width="${bw}" height="${ih}" rx="2" fill="#059669"/>`);
+    svg.push(`<rect x="${x+bw+2}" y="${yb-oh}" width="${bw}" height="${oh}" rx="2" fill="#dc2626"/>`);
+    svg.push(`<text x="${x+bw-1}" y="${H-5}" font-size="9" fill="#9ca3af" text-anchor="middle">${m.slice(5)}</text>`);
+  });
+  svg.push(`</svg>`);
+  $("#chTrend").innerHTML = months.some((m,i)=>inM[i]||outM[i]) ? svg.join("") : '<div class="empty-tip" style="padding:30px 0"><div class="t">暂无数据</div><div class="s">记账后这里显示近 6 个月收支</div></div>';
+
+  const cm = bjMonth();
+  const byCat = {};
+  EFF.ledger.filter(x=>x.t==="out"&&(x.d||"").startsWith(cm)).forEach(x=>{ const k=x.c||"未分类"; byCat[k]=(byCat[k]||0)+x.a; });
+  const entries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const palette = ["#1d4ed8","#059669","#d97706","#dc2626","#7c3aed","#0891b2","#db2777","#65a30d","#64748b"];
+  if(!entries.length){ $("#chCat").innerHTML='<div class="empty-tip" style="padding:30px 0"><div class="t">暂无支出</div><div class="s">本月还没有支出记录</div></div>'; $("#chCatLeg").innerHTML=""; return; }
+  const total = entries.reduce((s,e)=>s+e[1],0);
+  const C=2*Math.PI*54; let off=0;
+  const segs = entries.map((e,i)=>{ const f=e[1]/total; const seg=`<circle cx="70" cy="70" r="54" fill="none" stroke="${palette[i%palette.length]}" stroke-width="16" stroke-dasharray="${f*C} ${C}" stroke-dashoffset="${-off*C}" transform="rotate(-90 70 70)"/>`; off+=f; return seg; });
+  $("#chCat").innerHTML = `<svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="54" fill="none" stroke="#f9fafb" stroke-width="16"/>${segs.join("")}<text x="70" y="66" font-size="15" font-weight="700" text-anchor="middle" fill="#111827">¥${fmt2(total)}</text><text x="70" y="84" font-size="9" text-anchor="middle" fill="#9ca3af">本月支出</text></svg>`;
+  $("#chCatLeg").innerHTML = entries.map((e,i)=>`<span><i style="background:${palette[i%palette.length]}"></i>${esc(e[0])} ¥${fmt2(e[1])}</span>`).join("");
+}
+
+function ledRefresh(){
+  ledRender(); renderBudget(); renderCharts();
+  if($("#ef-calendar").classList.contains("on")){ renderCalendar(); renderCalDetail(); }
+  if($("#ef-notes").classList.contains("on")) renderNotes();
+}
+
+/* ── 日历 ── */
+let calView = (()=>{ const d=new Date(bjNow().slice(0,10)+"T00:00:00+08:00"); return {y:d.getFullYear(), m:d.getMonth()}; })();
+let calSel = null;
+function renderCalendar(){
+  const {y,m}=calView;
+  $("#calTitle").textContent = y+" 年 "+(m+1)+" 月";
+  const first = new Date(y,m,1), startW = (first.getDay()+6)%7;
+  const days = new Date(y,m+1,0).getDate();
+  const today = bjDate();
+  const wds = ["一","二","三","四","五","六","日"];
+  let html = wds.map(w=>`<div class="cal-wd">${w}</div>`).join("");
+  for(let i=0;i<startW;i++){ const pd=new Date(y,m,1-i); html+=`<div class="cal-cell dim"><span class="cd">${pd.getDate()}</span></div>`; }
+  for(let d=1;d<=days;d++){
+    const ds = y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    const dayLed = EFF.ledger.filter(x=>(x.d||"")===ds);
+    const inD = dayLed.filter(x=>x.t==="in").reduce((s,x)=>s+x.a,0);
+    const outD = dayLed.filter(x=>x.t==="out").reduce((s,x)=>s+x.a,0);
+    const hasNote = EFF.notes.some(n=>(n.date||"")===ds);
+    const cls = "cal-cell"+(ds===today?" today":"")+(calSel===ds?" sel":"");
+    html += `<div class="${cls}" data-d="${ds}"><span class="cd">${d}</span>`+
+      (inD?`<div class="cin">收 ${fmt2(inD)}</div>`:"")+
+      (outD?`<div class="cout">支 ${fmt2(outD)}</div>`:"")+
+      (hasNote?`<span class="cdot"></span>`:"")+`</div>`;
+  }
+  $("#calGrid").innerHTML = html;
+  $("#calGrid").querySelectorAll(".cal-cell[data-d]").forEach(c=>c.onclick=()=>{ calSel=c.dataset.d; renderCalendar(); renderCalDetail(); });
+}
+function renderCalDetail(){
+  if(!calSel){ $("#calDetail").innerHTML='<div class="empty-tip"><div class="t">点选日期</div><div class="s">点上方某一天，查看 / 补记当天的账目与便签</div></div>'; return; }
+  const ds = calSel;
+  const dayLed = EFF.ledger.filter(x=>(x.d||"")===ds);
+  const inD = dayLed.filter(x=>x.t==="in").reduce((s,x)=>s+x.a,0);
+  const outD = dayLed.filter(x=>x.t==="out").reduce((s,x)=>s+x.a,0);
+  const notes = EFF.notes.filter(n=>(n.date||"")===ds);
+  let html = `<div class="cal-detail-h"><span class="dt">${ds}　收 ¥${fmt2(inD)} ｜ 支 ¥${fmt2(outD)}</span></div>`;
+  html += `<div class="cal-quick">
+    <select id="calType"><option value="in">收入</option><option value="out">支出</option></select>
+    <input id="calAmt" type="number" min="0.01" step="0.01" placeholder="金额">
+    <input id="calCat" list="ldCatList" placeholder="分类">
+    <input id="calNote" placeholder="备注">
+    <button class="btn btn-p btn-sm" id="calAdd">记到这天</button></div>`;
+  html += `<div class="cal-sec-t">当天账目（${dayLed.length}）</div>`;
+  html += dayLed.length ? dayLed.slice().reverse().map(x=>{ const idx=EFF.ledger.indexOf(x); return `<div class="ld-row"><span class="ld-c">${esc(x.c||"未分类")}</span><span class="ld-n">${esc(x.n||"")}</span><span class="ld-amt ${x.t}">${x.t==="in"?"+":"-"}¥${fmt2(x.a)}</span><button class="ld-x" data-del="${idx}" title="删除">×</button></div>`; }).join("") : '<div class="empty-tip" style="padding:24px 0"><div class="s">这天还没有账目</div></div>';
+  html += `<div class="cal-sec-t">当天便签（${notes.length}）</div>`;
+  html += notes.length ? notes.map(n=>`<div class="ld-row"><span class="ld-n">${esc(n.text)||"（空）"}</span><button class="ld-x" data-note="${n.id}" title="删除">×</button></div>`).join("") : '<div class="empty-tip" style="padding:24px 0"><div class="s">这天还没有便签</div></div>';
+  $("#calDetail").innerHTML = html;
+  $("#calAdd").onclick = () => {
+    const a=parseFloat($("#calAmt").value); if(!a||a<=0){toast("请填金额");return;}
+    EFF.ledger.push({t:$("#calType").value,a:Math.round(a*100)/100,c:$("#calCat").value.trim(),n:$("#calNote").value.trim(),d:ds,ts:Date.now()});
+    ledSave(); ledRefresh(); toast("已记到 "+ds);
+  };
+  $("#calDetail").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ EFF.ledger.splice(+b.dataset.del,1); ledSave(); ledRefresh(); });
+  $("#calDetail").querySelectorAll("[data-note]").forEach(b=>b.onclick=()=>{ EFF.notes=EFF.notes.filter(n=>n.id!==b.dataset.note); notesSave(); ledRefresh(); });
+}
+$("#calPrev").onclick=()=>{ calView.m--; if(calView.m<0){calView.m=11;calView.y--;} renderCalendar(); };
+$("#calNext").onclick=()=>{ calView.m++; if(calView.m>11){calView.m=0;calView.y++;} renderCalendar(); };
+$("#calToday").onclick=()=>{ const d=new Date(bjNow().slice(0,10)+"T00:00:00+08:00"); calView={y:d.getFullYear(),m:d.getMonth()}; calSel=bjDate(); renderCalendar(); renderCalDetail(); };
+
+/* ── 便签 ── */
+const NOTE_COLORS = ["#dbeafe","#d1fae5","#fef3c7","#fee2e2","#f3f4f6"];
+function renderNotes(){
+  const sorted = [...EFF.notes].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0) || b.created-a.created);
+  $("#notesCount").textContent = EFF.notes.length ? `共 ${EFF.notes.length} 张便签`+(EFF.notes.some(n=>n.pinned)?" · "+EFF.notes.filter(n=>n.pinned).length+" 张置顶":"") : "还没有便签";
+  let html = sorted.map(n=>{
+    const bg = NOTE_COLORS.includes(n.color)?n.color:"#f3f4f6";
+    return `<div class="note-card ${n.pinned?"pinned":""} ${n.done?"done":""}" style="background:${bg}" data-id="${n.id}">
+      <div class="nc-text">${esc(n.text)||'<span style="color:#9ca3af">（空便签，点编辑填写）</span>'}</div>
+      <div class="nc-bar">
+        <button class="pin" data-act="pin">${n.pinned?"已置顶":"置顶"}</button>
+        <button data-act="done">${n.done?"已完成":"完成"}</button>
+        <button data-act="edit">编辑</button>
+        <button data-act="del">删除</button>
+      </div>
+      ${n.date?`<div class="nc-date">📅 ${esc(n.date)}</div>`:""}
+    </div>`;
+  }).join("");
+  html += `<div class="note-add" id="noteAddCard">+ 新建便签</div>`;
+  $("#notesGrid").innerHTML = html;
+  $("#notesGrid").querySelectorAll(".note-card").forEach(card=>{
+    const id=card.dataset.id; const n=EFF.notes.find(x=>x.id===id); if(!n)return;
+    card.querySelector('[data-act="pin"]').onclick=()=>{ n.pinned=!n.pinned; notesSave(); renderNotes(); };
+    card.querySelector('[data-act="done"]').onclick=()=>{ n.done=!n.done; notesSave(); renderNotes(); };
+    card.querySelector('[data-act="del"]').onclick=()=>{ EFF.notes=EFF.notes.filter(x=>x.id!==id); notesSave(); renderNotes(); };
+    card.querySelector('[data-act="edit"]').onclick=()=>openNoteEdit(n);
+  });
+  $("#noteAddCard").onclick = ()=>{ const n={id:"n"+Date.now(),text:"",color:"#dbeafe",pinned:false,done:false,date:"",created:Date.now()}; EFF.notes.push(n); notesSave(); renderNotes(); openNoteEdit(n); };
+}
+function openNoteEdit(n){
+  const card = $(`.note-card[data-id="${n.id}"]`); if(!card)return;
+  card.innerHTML = `<textarea placeholder="写点什么…">${esc(n.text)}</textarea>
+    <div class="note-swatches">${NOTE_COLORS.map(c=>`<i class="${c===n.color?"on":""}" data-c="${c}" style="background:${c}"></i>`).join("")}</div>
+    <div class="nc-bar">
+      <input id="neDate" type="date" value="${n.date||""}" style="padding:3px 6px;border:1px solid var(--line);border-radius:6px;font-size:11.5px">
+      <button data-act="save">保存</button>
+      <button data-act="cancel">取消</button>
+    </div>`;
+  const ta = card.querySelector("textarea"); ta.focus();
+  card.querySelectorAll(".note-swatches i").forEach(i=>i.onclick=()=>{ n.color=i.dataset.c; card.querySelectorAll(".note-swatches i").forEach(x=>x.classList.remove("on")); i.classList.add("on"); });
+  card.querySelector('[data-act="save"]').onclick=()=>{ n.text=ta.value.trim(); n.date=card.querySelector("#neDate").value; notesSave(); renderNotes(); };
+  card.querySelector('[data-act="cancel"]').onclick=()=>{ if(!n.text){ EFF.notes=EFF.notes.filter(x=>x.id!==n.id); notesSave(); } renderNotes(); };
+}
+$("#noteAdd").onclick = () => { const n={id:"n"+Date.now(),text:"",color:"#dbeafe",pinned:false,done:false,date:"",created:Date.now()}; EFF.notes.push(n); notesSave(); renderNotes(); openNoteEdit(n); };
+
 /* ── 效率页初始化 ── */
-ledLoad(); taskLoad();
-ledRender(); tkRender();
+ledLoad(); taskLoad(); budgetLoad(); notesLoad();
+ledRender(); tkRender(); renderCatChips(); renderBudget(); renderCharts(); renderCalendar(); renderCalDetail(); renderNotes();
 $$(".eff-tabs button").forEach(b => b.onclick = () => {
   $$(".eff-tabs button").forEach(x => x.classList.remove("on"));
   b.classList.add("on");
   $$(".ef-b").forEach(x => x.classList.remove("on"));
-  $("#ef-" + b.dataset.ef).classList.add("on");
+  const tgt = $("#ef-" + b.dataset.ef); tgt.classList.add("on");
+  if(b.dataset.ef==="ledger"){ ledRefresh(); }
+  else if(b.dataset.ef==="calendar"){ renderCalendar(); renderCalDetail(); }
+  else if(b.dataset.ef==="notes"){ renderNotes(); }
 });
 
 loadData();
@@ -2970,7 +3277,7 @@ function renderAccCard(entries) {
       });
       cnt++;
     });
-    ledSave(); ledRender();
+    ledSave(); ledRefresh();
     wrap.remove();
     asMsg("a", `✅ 已记 ${cnt} 笔到「效率 · 记账」，可在效率页查看 / 导出 CSV。`);
     toast("已记账 " + cnt + " 笔");
