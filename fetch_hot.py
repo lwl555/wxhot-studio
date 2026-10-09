@@ -366,31 +366,37 @@ def fetch_hellogithub():
         FETCH_LOG.append({"source": "HelloGitHub/月刊", "fetched": False,
                           "items": 0, "note": f"v{vol} 页面为空"})
         return []
-    for j, lm in enumerate(links):
-        repo = lm.group(1).rstrip("/")
-        name = html.unescape(lm.group(2)).strip()
-        if repo in seen or not name:
-            continue
-        seen.add(repo)
-        start = lm.end()
-        end = links[j + 1].start() if j + 1 < len(links) else len(page)
-        chunk_raw = page[start:end]
-        # 先抽 Star（清洗会删掉 Star 文本，所以先取）
-        sm = re.search(r"Star\s*([\d.,]+[k万w]?)", chunk_raw)
-        stars = parse_star(sm.group(1)) if sm else 0
-        # 再清洗成简介
-        chunk = re.sub(r"<[^>]+>", " ", chunk_raw)
-        chunk = html.unescape(chunk)
-        chunk = re.sub(r"Star\s*[\d.,]*[k万w]?", " ", chunk)
-        chunk = re.sub(r"(Fork|详情|\[\s*详情\s*\])", " ", chunk)
-        chunk = re.sub(r"[\d,]+\s*(天前|小时前|分钟前)", " ", chunk)
-        chunk = re.sub(r"^\s*\d+\s*[\.、]?\s*", "", chunk)
-        desc = re.sub(r"\s+", " ", chunk).strip()[:160]
-        items.append(build_item(
-            name, repo, "HelloGitHub", "HelloGitHub 月刊", "科技数码",
-            desc, stars, ("★" + fmt_star(stars)) if stars else "—", "hellogithub"))
+    # 月刊详情页是 Next.js SSR：结构化数据在 __NEXT_DATA__ JSON 里，比解析 HTML 更稳
+    items = []
+    note = ""
+    try:
+        mj = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', page, re.S)
+        if not mj:
+            note = "no __NEXT_DATA__"
+        else:
+            nd = json.loads(mj.group(1))
+            vdata = nd["props"]["pageProps"]["volume"]["data"]
+            seen = set()
+            for cat in vdata:
+                for it in (cat.get("items") or []):
+                    repo = (it.get("github_url") or "").strip()
+                    name = (it.get("full_name") or it.get("name") or "").strip()
+                    if not repo or repo in seen:
+                        continue
+                    seen.add(repo)
+                    desc = (it.get("description") or "").strip()
+                    stars = it.get("stars") or 0
+                    cover = (it.get("image_url") or "").strip()
+                    item = build_item(
+                        name, repo, "HelloGitHub", "HelloGitHub 月刊", "科技数码",
+                        desc, stars, ("★" + fmt_star(stars)) if stars else "—", "hellogithub")
+                    if cover:
+                        item["cover"] = cover
+                    items.append(item)
+    except Exception as e:
+        note = f"json err: {e}"
     FETCH_LOG.append({"source": "HelloGitHub/月刊", "fetched": True,
-                      "items": len(items), "note": f"v{vol}"})
+                      "items": len(items), "note": (note or f"v{vol}")})
     print(f"  [HelloGitHub 月刊 v{vol}] 抓到 {len(items)} 个项目")
     return items
 
