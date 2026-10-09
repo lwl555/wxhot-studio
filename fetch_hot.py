@@ -36,29 +36,30 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 OUT_FILE = os.path.join(OUT_DIR, "articles.json")
 
-# 节点清单：(节点ID, 平台标签, 榜单名, 分类)
+# 节点清单：(节点ID, 平台标签, 榜单名, 默认分类)
+# 默认分类：仅当标题没命中关键词分类时兜底（空串 → 走 BOARD_FALLBACK / 综合）
 NODES = [
-    ("WnBe01o371", "微信", "微信24h热文榜", "公众号爆文"),
-    ("W1VdJPZoLQ", "微信", "微信今日视频榜", "视频爆款"),
-    ("KMZd7VOvrO", "知乎", "知乎日报Today", "知乎"),
-    ("mproPpoq6O", "知乎", "知乎热榜", "知乎"),
-    ("KqndgxeLl9", "微博", "微博热搜榜", "微博"),
-    ("x9ozB4KoXb", "今日头条", "今日头条头条热榜", "头条"),
-    ("Jb0vmloB1G", "百度", "百度实时热点", "社会热点"),
-    ("Om4ejxvxEN", "百度贴吧", "百度贴吧热议榜", "社区热议"),
-    ("DpQvNABoNE", "抖音", "抖音总榜", "短视频"),
-    ("74KvxwokxM", "哔哩哔哩", "哔哩哔哩全站日榜", "视频爆款"),
-    ("Q1Vd5Ko85R", "36氪", "36氪24小时热榜", "科技"),
-    ("5VaobgvAj1", "虎嗅网", "虎嗅网热文", "科技"),
-    ("wWmoO5Rd4E", "澎湃", "澎湃热榜", "时政社会"),
-    ("DOvnNz1vEB", "机器之心", "机器之心", "AI科技"),
-    ("MZd7azPorO", "量子位", "量子位", "AI科技"),
-    ("Y2KeDGQdNP", "少数派", "少数派热门文章", "数码效率"),
+    ("WnBe01o371", "微信", "微信24h热文榜", ""),
+    ("W1VdJPZoLQ", "微信", "微信今日视频榜", ""),
+    ("KMZd7VOvrO", "知乎", "知乎日报Today", ""),
+    ("mproPpoq6O", "知乎", "知乎热榜", ""),
+    ("KqndgxeLl9", "微博", "微博热搜榜", ""),
+    ("x9ozB4KoXb", "今日头条", "今日头条头条热榜", ""),
+    ("Jb0vmloB1G", "百度", "百度实时热点", ""),
+    ("Om4ejxvxEN", "百度贴吧", "百度贴吧热议榜", ""),
+    ("DpQvNABoNE", "抖音", "抖音总榜", ""),
+    ("74KvxwokxM", "哔哩哔哩", "哔哩哔哩全站日榜", ""),
+    ("Q1Vd5Ko85R", "36氪", "36氪24小时热榜", "科技数码"),
+    ("5VaobgvAj1", "虎嗅网", "虎嗅网热文", "科技数码"),
+    ("wWmoO5Rd4E", "澎湃", "澎湃热榜", "社会热点"),
+    ("DOvnNz1vEB", "机器之心", "机器之心", "科技数码"),
+    ("MZd7azPorO", "量子位", "量子位", "科技数码"),
+    ("Y2KeDGQdNP", "少数派", "少数派热门文章", "科技数码"),
     ("4KvxEX0dkx", "微信读书", "微信读书总榜", "书单"),
-    ("mDOvnyBoEB", "豆瓣", "豆瓣电影新片榜", "影视娱乐"),
-    ("3adqqzadng", "抖音", "抖音热点榜", "短视频"),
-    ("WYKd69jvaP", "梨视频", "梨视频总榜", "视频爆款"),
-    ("MZd7VN3vrO", "百度视频", "百度视频榜", "视频爆款"),
+    ("mDOvnyBoEB", "豆瓣", "豆瓣电影新片榜", "娱乐影视"),
+    ("3adqqzadng", "抖音", "抖音热点榜", ""),
+    ("WYKd69jvaP", "梨视频", "梨视频总榜", "娱乐影视"),
+    ("MZd7VN3vrO", "百度视频", "百度视频榜", "娱乐影视"),
 
     # ── 第二批：补垂直领域厚度（财经 / 体育 / 科技 / 娱乐 / 汽车 / 短视频 / 社区）──
     ("G2me3ndwjq", "华尔街见闻", "华尔街见闻日排行", "财经理财"),
@@ -72,6 +73,18 @@ NODES = [
     ("12owgX0oNV", "腾讯新闻", "腾讯新闻热榜", "社会热点"),
     ("NRrvWq3e5z", "煎蛋", "煎蛋热门", "科技数码"),
     ("MZd7PrPerO", "快手", "快手实时热榜", "社会热点"),
+
+    # ── 第三批：扩满微信/公众号内容（tophub 各垂直维度 24h 热文榜）──
+    ("WmoOxxDv4E", "微信", "微信·军事24h热文榜", "社会热点"),
+    ("5PdMaaadmg", "微信", "微信·科技24h热文榜", "科技数码"),
+    ("proPGGOeq6", "微信", "微信·文化24h热文榜", "社会热点"),
+    ("nBe0xxje37", "微信", "微信·生活24h热文榜", "生活美食"),
+    ("DOvn33ydEB", "微信", "微信·职场24h热文榜", "职场成长"),
+    ("Ywv4BJRePa", "微信", "微信·财经24h热文榜", "财经理财"),
+    ("MZd7BVYvrO", "微信", "微信·教育24h热文榜", "教育考试"),
+    ("x9ozmmYeXb", "微信", "微信·历史24h热文榜", "社会热点"),
+    ("Q0orrr0o8B", "微信", "微信·健康24h热文榜", "健康养生"),
+    ("anoppbRolZ", "微信读书", "微信读书飙升榜", "书单"),
 ]
 
 # 关键词分类（按标题命中；规则自上而下，先具体后宽泛）
@@ -149,11 +162,13 @@ BOARD_FALLBACK = {
 }
 
 
-def guess_category(title, board=""):
+def guess_category(title, board="", default_cat=None):
     for cat, kws in CATEGORY_RULES:
         for k in kws:
             if k in title:
                 return cat
+    if default_cat:
+        return default_cat
     if board and board in BOARD_FALLBACK:
         return BOARD_FALLBACK[board]
     return "综合"
@@ -173,7 +188,7 @@ def fix_cover(u):
         return "https://" + u[len("http://"):]
     return u
 
-def parse_node(node_id, platform, board_name, category, rank_base=0):
+def parse_node(node_id, platform, board_name, default_cat=None, rank_base=0):
     """解析单个 tophub 节点"""
     page = fetch(f"https://tophub.today/n/{node_id}")
     if not page:
@@ -232,7 +247,7 @@ def parse_node(node_id, platform, board_name, category, rank_base=0):
             "url": clean_url(url),
             "platform": platform,
             "board": board_name,
-            "category": guess_category(title + " " + desc, board_name),
+            "category": guess_category(title + " " + desc, board_name, default_cat),
             "readCount": reads,
             "readCountText": (w.group(1).strip() if w else "—"),
             "hasRealRead": has_real_read,
@@ -247,15 +262,156 @@ def parse_node(node_id, platform, board_name, category, rank_base=0):
     return items
 
 
+# ───────────────────────── 开源平台 ─────────────────────────
+def parse_star(s):
+    """'12,345' / '5.2k' / '5.2w' / '1.7万' -> int"""
+    s = (s or "").strip().lower().replace(",", "")
+    if not s:
+        return 0
+    m = re.match(r"([\d.]+)\s*([k万w]?)", s)
+    if not m:
+        m2 = re.search(r"\d+", s)
+        return int(m2.group()) if m2 else 0
+    num = float(m.group(1))
+    unit = m.group(2)
+    if unit == "w":
+        num *= 10000
+    elif unit == "k":
+        num *= 1000
+    elif unit == "万":
+        num *= 10000
+    return int(num)
+
+
+def fmt_star(n):
+    if not n:
+        return "0"
+    if n >= 10000:
+        v = n / 10000
+    elif n >= 1000:
+        v = n / 1000
+    else:
+        return str(n)
+    s = ("%.1f" % v).rstrip("0").rstrip(".")
+    return s + ("万" if n >= 10000 else "k")
+
+
+def build_item(title, url, platform, board, category, desc, reads, reads_text, source):
+    uid = hashlib.md5(url.encode("utf-8")).hexdigest()[:12]
+    return {
+        "id": uid,
+        "title": title,
+        "url": clean_url(url),
+        "platform": platform,
+        "board": board,
+        "category": category,
+        "readCount": reads,
+        "readCountText": reads_text,
+        "hasRealRead": False,
+        "source": source,
+        "rank": 0,
+        "cover": "",
+        "desc": (desc or "").strip(),
+        "collectedAt": now_bj(),
+    }
+
+
+def fetch_github_trending(since=""):
+    """GitHub 官方热门榜（免 key，纯网页解析）。since: '' / 'weekly' / 'monthly'"""
+    label = {"": "GitHub 今日热门", "weekly": "GitHub 周热门", "monthly": "GitHub 月热门"}[since]
+    url = "https://github.com/trending" + ("?since=" + since if since else "")
+    page = fetch(url)
+    if not page:
+        return []
+    arts = re.findall(r'<article class="Box-row">(.*?)</article>', page, re.S)
+    items = []
+    for art in arts:
+        m = re.search(r'<h2[^>]*>\s*<a href="/([^"]+)"', art)
+        if not m:
+            continue
+        repo = m.group(1).strip("/")
+        if repo.count("/") != 1:
+            continue
+        desc = ""
+        d = re.search(r'<p class="[^"]*col-9[^"]*">\s*(.*?)\s*</p>', art, re.S)
+        if d:
+            desc = html.unescape(re.sub("<[^>]+>", "", d.group(1))).strip()
+        lang = ""
+        l = re.search(r'itemprop="programmingLanguage">([^<]+)<', art)
+        if l:
+            lang = l.group(1).strip()
+        stars = 0
+        s = re.search(r'/stargazers">\s*([\d,]+)\s*<', art)
+        if s:
+            stars = parse_star(s.group(1))
+        title = repo + ((" · " + lang) if lang else "")
+        items.append(build_item(
+            title, "https://github.com/" + repo, "GitHub", label, "科技数码",
+            desc, stars, ("★" + fmt_star(stars)) if stars else "—", "github"))
+    print(f"  [GitHub/{label}] 抓到 {len(items)} 个仓库")
+    return items
+
+
+def fetch_hellogithub():
+    """HelloGitHub 月刊：从 RSS 拿到最新一期，再抓该期里的开源项目（含简介）。"""
+    rss = fetch("https://hellogithub.com/rss")
+    vol = ""
+    m = re.search(r'https://hellogithub\.com/periodical/volume/(\d+)', rss or "")
+    if m:
+        vol = m.group(1)
+    if not vol:
+        return []
+    page = fetch(f"https://hellogithub.com/periodical/volume/{vol}")
+    if not page:
+        return []
+    items = []
+    seen = set()
+    links = list(re.finditer(
+        r'<a href="(https://github\.com/[\w.-]+/[\w.-]+)">([^<]+)</a>', page))
+    for j, lm in enumerate(links):
+        repo = lm.group(1).rstrip("/")
+        name = html.unescape(lm.group(2)).strip()
+        if repo in seen or not name:
+            continue
+        seen.add(repo)
+        start = lm.end()
+        end = links[j + 1].start() if j + 1 < len(links) else len(page)
+        chunk_raw = page[start:end]
+        # 先抽 Star（清洗会删掉 Star 文本，所以先取）
+        sm = re.search(r"Star\s*([\d.,]+[k万w]?)", chunk_raw)
+        stars = parse_star(sm.group(1)) if sm else 0
+        # 再清洗成简介
+        chunk = re.sub(r"<[^>]+>", " ", chunk_raw)
+        chunk = html.unescape(chunk)
+        chunk = re.sub(r"Star\s*[\d.,]*[k万w]?", " ", chunk)
+        chunk = re.sub(r"(Fork|详情|\[\s*详情\s*\])", " ", chunk)
+        chunk = re.sub(r"[\d,]+\s*(天前|小时前|分钟前)", " ", chunk)
+        chunk = re.sub(r"^\s*\d+\s*[\.、]?\s*", "", chunk)
+        desc = re.sub(r"\s+", " ", chunk).strip()[:160]
+        items.append(build_item(
+            name, repo, "HelloGitHub", "HelloGitHub 月刊", "科技数码",
+            desc, stars, ("★" + fmt_star(stars)) if stars else "—", "hellogithub"))
+    print(f"  [HelloGitHub 月刊 v{vol}] 抓到 {len(items)} 个项目")
+    return items
+
+
 def main():
     print("=" * 56)
-    print("热榜数据采集 —— 数据源：tophub.today（真实阅读量）")
+    print("热榜数据采集 —— 数据源：tophub.today + GitHub Trending + HelloGitHub")
     print("=" * 56)
 
     all_items = []
     for node_id, platform, board, cat in NODES:
         print(f"\n→ 抓取 {platform} · {board}")
         all_items.extend(parse_node(node_id, platform, board, cat))
+
+    # 开源平台（免费、免 key，GitHub Actions 境外环境可直连）
+    print("\n→ 抓取 开源平台 · GitHub Trending")
+    all_items.extend(fetch_github_trending(""))
+    all_items.extend(fetch_github_trending("weekly"))
+    all_items.extend(fetch_github_trending("monthly"))
+    print("\n→ 抓取 开源平台 · HelloGitHub 月刊")
+    all_items.extend(fetch_hellogithub())
 
     # 去重（按 url）
     seen = set()
@@ -292,11 +448,13 @@ def main():
     if inherited:
         print(f"\n继承上一轮封面 {inherited} 条（避免补图成果被覆盖）")
 
-    # 保留上一轮来自其他源的条目（开源 API 抓的），本轮 tophub 抓取不会把它们冲掉
+    # 保留上一轮来自「非本轮实时抓取」源的条目（如已废弃的 dailyhot），
+    # 本轮实时抓取的 tophub/github/hellogithub 不继承旧值，避免开源榜堆积陈旧仓库
+    FRESH_SOURCES = {"tophub", "github", "hellogithub"}
     seen_u = {x["url"] for x in uniq}
     kept = 0
     for x in (old.get("articles") or []):
-        if x.get("source") and x.get("source") != "tophub" and x.get("url") not in seen_u:
+        if x.get("source") and x.get("source") not in FRESH_SOURCES and x.get("url") not in seen_u:
             uniq.append(x)
             seen_u.add(x["url"])
             kept += 1
