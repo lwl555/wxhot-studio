@@ -1,5 +1,5 @@
 {
- "at": "2026-10-12 00:07:31",
+ "at": "2026-10-12 00:42:00",
  "added": 0,
  "diag": [
   {
@@ -36,7 +36,7 @@
    "route": "ngabbs",
    "plat": "NGA",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
+   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
   },
   {
    "route": "52pojie",
