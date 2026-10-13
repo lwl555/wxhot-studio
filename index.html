@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>林的创作平台 · 热榜爆文仿写</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d4ed8'/%3E%3Ctext x='32' y='45' font-size='33' font-weight='700' text-anchor='middle' fill='%23ffffff' font-family='system-ui,-apple-system,sans-serif'%3E%E7%83%AD%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#1d4ed8">
 <style>
 :root{
   --blue:#1d4ed8; --blue-hover:#1e40af; --blue-50:#eff6ff; --blue-100:#dbeafe;
@@ -725,6 +727,15 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 @media(max-width:560px){
   .ld-charts{grid-template-columns:1fr}
 }
+/* 配图风格选择卡（带样张缩略图） */
+.sty-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:2px}
+.sty-card{border:1px solid var(--line);border-radius:8px;padding:0 0 4px;overflow:hidden;cursor:pointer;background:#fff;text-align:center;transition:border-color .12s,box-shadow .12s}
+.sty-card svg{display:block;width:100%;height:auto}
+.sty-card .sty-n{font-size:11.5px;color:var(--ink-2);padding:4px 2px 0;line-height:1.2}
+.sty-card:hover{border-color:var(--line-2)}
+.sty-card.on{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.sty-card.on .sty-n{color:var(--blue);font-weight:600}
+@media(max-width:560px){.sty-grid{grid-template-columns:repeat(5,1fr);gap:6px}.sty-card .sty-n{font-size:10px}}
 /* AI 检索到的相关热文卡片 */
 .as-src{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
 .as-src-h{font-size:12px;color:var(--ink-3);margin-bottom:7px;font-weight:600}
@@ -1095,15 +1106,32 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
             <option value="1:1">1:1 方图</option>
           </select>
         </div>
-        <div class="fld">
-          <label>风格</label>
-          <select id="imStyle">
-            <option value="real" selected>写实摄影</option>
-            <option value="illu">扁平插画</option>
-            <option value="anime">日系动漫</option>
-            <option value="3d">3D 渲染</option>
-            <option value="ink">水墨国风</option>
-          </select>
+        <div class="fld"></div>
+      </div>
+      <div class="fld">
+        <label>风格 <span style="color:var(--ink-3);font-weight:400">（点选样式，生成时按此出图）</span></label>
+        <input type="hidden" id="imStyle" value="real">
+        <div class="sty-grid" id="styGrid">
+          <button type="button" class="sty-card on" data-v="real">
+            <svg viewBox="0 0 80 52" aria-hidden="true"><defs><linearGradient id="styReal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbbf24"/><stop offset=".6" stop-color="#f97316"/><stop offset="1" stop-color="#7c2d12"/></linearGradient></defs><rect width="80" height="52" fill="url(#styReal)"/><circle cx="40" cy="28" r="9" fill="#fef3c7"/><path d="M0 44 L18 30 L30 40 L48 24 L66 38 L80 30 V52 H0 Z" fill="#431407" opacity=".85"/></svg>
+            <div class="sty-n">写实摄影</div>
+          </button>
+          <button type="button" class="sty-card" data-v="illu">
+            <svg viewBox="0 0 80 52" aria-hidden="true"><rect width="80" height="52" fill="#bfdbfe"/><circle cx="58" cy="14" r="8" fill="#f59e0b"/><path d="M0 40 L24 18 L44 40 Z" fill="#10b981"/><path d="M30 40 L54 24 L80 40 Z" fill="#059669"/><rect y="40" width="80" height="12" fill="#1e40af" opacity=".15"/></svg>
+            <div class="sty-n">扁平插画</div>
+          </button>
+          <button type="button" class="sty-card" data-v="anime">
+            <svg viewBox="0 0 80 52" aria-hidden="true"><rect width="80" height="52" fill="#dbeafe"/><circle cx="62" cy="12" r="7" fill="#fbcfe8"/><path d="M0 38 Q20 26 40 36 T80 34 V52 H0 Z" fill="#93c5fd"/><path d="M0 46 Q24 38 48 45 T80 44 V52 H0 Z" fill="#60a5fa"/><circle cx="20" cy="12" r="2.5" fill="#f9a8d4"/><circle cx="30" cy="8" r="2" fill="#f9a8d4"/><circle cx="38" cy="14" r="2.2" fill="#f9a8d4"/></svg>
+            <div class="sty-n">日系动漫</div>
+          </button>
+          <button type="button" class="sty-card" data-v="3d">
+            <svg viewBox="0 0 80 52" aria-hidden="true"><defs><radialGradient id="sty3d" cx=".35" cy=".3" r="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#4c1d95"/></radialGradient></defs><rect width="80" height="52" fill="#ede9fe"/><ellipse cx="40" cy="46" rx="24" ry="4" fill="#4c1d95" opacity=".25"/><circle cx="40" cy="26" r="15" fill="url(#sty3d)"/><circle cx="34" cy="20" r="4.5" fill="#ffffff" opacity=".7"/></svg>
+            <div class="sty-n">3D 渲染</div>
+          </button>
+          <button type="button" class="sty-card" data-v="ink">
+            <svg viewBox="0 0 80 52" aria-hidden="true"><rect width="80" height="52" fill="#fafaf8"/><path d="M0 40 Q14 20 26 34 Q34 42 44 30 Q56 16 68 32 Q74 39 80 36 V52 H0 Z" fill="#374151" opacity=".75"/><path d="M0 46 Q20 36 40 44 T80 42 V52 H0 Z" fill="#111827" opacity=".55"/><rect x="66" y="6" width="9" height="9" rx="1.5" fill="#dc2626"/></svg>
+            <div class="sty-n">水墨国风</div>
+          </button>
         </div>
       </div>
       <div class="btns" style="margin-bottom:18px">
@@ -1718,12 +1746,28 @@ const HUMANIZER = {
 - 像真人随手写：可口语、可短句、可有口头禅、可省略主语、可留白不总结`,
 };
 
+/* 运行提示：按钮转圈 + 实时计时，让"在干活"看得见 */
+function startBusy(btn, label) {
+  const t0 = Date.now();
+  btn.disabled = true;
+  let stage = label;
+  const tick = () => { const s = Math.round((Date.now() - t0) / 1000); btn.innerHTML = `<span class="spin"></span> ${stage} · ${s}s`; };
+  tick();
+  clearInterval(btn._bt);
+  btn._bt = setInterval(tick, 1000);
+  btn._stage = t => { stage = t; tick(); };   /* 中途换阶段文案：下载模型→检测中… */
+}
+function stopBusy(btn, label) {
+  clearInterval(btn._bt); btn._bt = null;
+  btn.disabled = false;
+  if (label) btn.textContent = label;
+}
+
 async function doRewrite(regen) {
   if (!CUR) return;
   const btn = regen ? $("#btnRwRe") : $("#btnRw");
   const txt = btn.textContent;
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spin"></span> 生成中…`;
+  startBusy(btn, regen ? "换一版中" : "AI 仿写中");
   $("#rwOut").className = "out empty";
   $("#rwOut").textContent = regen ? "换一版中，通常 10~20 秒…" : "AI 正在读原文并重写，通常 10~20 秒…";
 
@@ -1781,8 +1825,7 @@ ${extra ? `\n【额外要求】\n${extra}` : ""}${seed}
     $("#rwOut").className = "out empty";
     $("#rwOut").textContent = "生成失败：" + e.message + "。稍后重试，或检查代理是否可用。";
   } finally {
-    btn.disabled = false;
-    btn.textContent = txt;
+    stopBusy(btn, txt);
   }
 }
 $("#btnRw").onclick = () => doRewrite(false);
@@ -2130,11 +2173,18 @@ function svgPlaceholder(text, ratio, style) {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
+/* 风格选择卡：点选切换（写入隐藏 #imStyle，生成逻辑零改动） */
+$("#styGrid").addEventListener("click", e => {
+  const c = e.target.closest(".sty-card"); if (!c) return;
+  $("#imStyle").value = c.dataset.v;
+  $$("#styGrid .sty-card").forEach(x => x.classList.toggle("on", x === c));
+});
+
 $("#btnIm").onclick = async () => {
   const ratio = $("#imRatio").value, style = $("#imStyle").value;
   const prompt = $("#imPrompt").value.trim() || CUR.title;
   const btn = $("#btnIm");
-  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 生成中…`;
+  startBusy(btn, "生成图片中");
   const label = { real: "写实摄影", illu: "扁平插画", anime: "日系动漫", "3d": "3D 渲染", ink: "水墨国风" }[style];
   const eng = { real: "photorealistic, cinematic lighting, 8k", illu: "flat vector illustration, clean", anime: "anime style, vibrant", "3d": "3D render, octane, soft shadows", ink: "chinese ink wash painting" }[style];
 
@@ -2155,14 +2205,14 @@ $("#btnIm").onclick = async () => {
         $("#imOut").innerHTML = `
           <div class="imgbox"><img src="${esc(src)}" referrerpolicy="no-referrer">
             <div class="cap">${esc(label)} · ${esc(ratio)} · ${esc(prompt.slice(0, 26))}</div></div>`;
-        btn.disabled = false; btn.textContent = "生成图片";
+        stopBusy(btn, "生成图片");
         return;
       }
     } else if (r.status === 429) {
       $("#imOut").innerHTML = `<div class="imgbox" style="display:grid;place-items:center;padding:20px;border-style:dashed">
         <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
           免费额度限流中<br>约 20 次/分钟<br><br>等几秒再点一次</div></div>`;
-      btn.disabled = false; btn.textContent = "生成图片";
+      stopBusy(btn, "生成图片");
       return;
     }
     throw new Error("接口 " + r.status);
@@ -2174,7 +2224,7 @@ $("#btnIm").onclick = async () => {
         <div style="text-align:center;font-size:12px;color:var(--ink-3);line-height:1.8">
           生成失败：${esc(e.message)}<br>可稍后重试</div></div>`;
   }
-  btn.disabled = false; btn.textContent = "生成图片";
+  stopBusy(btn, "生成图片");
 };
 
 /* ═══════════ AIGC 检测 ═══════════ */
@@ -2185,18 +2235,18 @@ $("#btnDet").onclick = async () => {
   if (text.replace(/\s/g, "").length < 50) { alert("文本不足 50 字"); return; }
 
   const btn = $("#btnDet");
-  btn.disabled = true; btn.innerHTML = `<span class="spin"></span> 准备中…`;
+  startBusy(btn, "准备检测");
 
   try {
     if (!AIGC.loaded) {
-      btn.innerHTML = `<span class="spin"></span> 下载模型…`;
+      btn._stage("下载模型");
       $("#detOut").innerHTML = `<div class="note info">正在下载检测模型（约 98MB，首次较慢；之后走浏览器缓存就很快了）</div>`;
       await loadAIGC((p, file) => {
         if (p < 0) { $("#detOut").innerHTML = `<div class="note"><b>模型加载失败</b><br>${esc(file)}</div>`; return; }
         $("#detOut").innerHTML = `<div class="note info">正在加载检测模型… ${p}%${file ? `（${esc(file)}）` : ""}</div>`;
       });
     }
-    btn.innerHTML = `<span class="spin"></span> 检测中…`;
+    btn._stage("检测中");
     $("#detOut").innerHTML = `<div class="note info">正在分段检测…</div>`;
     const data = await detectLongText(text, (i, n, ai) => {
       $("#detOut").innerHTML = `<div class="note info">正在检测第 ${i}/${n} 段…（当前段 AI 概率 ${ai}%）</div>`;
@@ -2205,7 +2255,7 @@ $("#btnDet").onclick = async () => {
   } catch (e) {
     $("#detOut").innerHTML = `<div class="note"><b>检测失败</b><br>${esc(e.message)}</div>`;
   } finally {
-    btn.disabled = false; btn.textContent = "开始检测";
+    stopBusy(btn, "开始检测");
   }
 };
 
