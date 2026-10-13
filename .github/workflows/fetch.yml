@@ -14,6 +14,12 @@ on:
 permissions:
   contents: write         # 允许提交更新数据文件
 
+# 同一时刻只允许一个采集实例：定时/推送/手动同时触发时会互相抢 articles.json，
+# 后提交的 git push 会被拒（non-fast-forward），导致整个 run 报失败邮件。
+concurrency:
+  group: fetch-hotlist
+  cancel-in-progress: false
+
 jobs:
   fetch:
     runs-on: ubuntu-latest
@@ -49,6 +55,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/
           git commit -m "chore: 自动更新热榜数据 $(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M')"
+          # 双保险：若仍碰到远端领先（如手动触发撞上定时），先变基再推；冲突则放弃变基（下轮定时会补上）
+          git pull --rebase origin main || git rebase --abort
           git push
 
       - name: 汇总结果
