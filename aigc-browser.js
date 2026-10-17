@@ -8,14 +8,53 @@
 
 // 全部自托管在 GitHub Pages 上（jsDelivr 在大陆经常不可达，曾导致检测加载失败）
 const AIGC = {
+  // 【踩坑记录】wasm 文件的真实目录是 vendor/tfjs/，不是 vendor/tfjs/dist/。
+  // 之前写成 libBase + "/dist/" 导致 ort-wasm.wasm 404 → ONNX 引擎初始化失败
+  // → 检测完全跑不起来（表现就是"点了没反应/检测失败"）。
   esmUrl: "https://lwl555.github.io/wxhot-studio/vendor/tfjs/transformers.min.js",
   libBase: "https://lwl555.github.io/wxhot-studio/vendor/tfjs/",
   // 模型根目录（HF 目录结构：<root>/custom/resolve/main/...）
   modelBase: "https://lwl555.github.io/wxhot-studio/aigc-model/",
+
+  // 备选引擎源：自托管挂了/被墙时回退到公共 CDN（transformers.js 是公开 npm 包）
+  esmFallback: [
+    "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+    "https://unpkg.com/@xenova/transformers@2.17.2",
+  ],
   loaded: false,
   loading: false,
   pipeline: null,
+  srcName: "",           // 当前实际生效的引擎源，便于排查
 };
+
+/* 探测模型文件是否可达 + 预估下载耗时。
+   模型 103MB，走 GitHub Pages 常年在 300KB/s~1MB/s，首次要几分钟；
+   不先说清楚，用户会以为卡死而中途关掉，那这次下载就白费了。 */
+async function probeAIGCModel(onTip) {
+  const url = AIGC.modelBase + "custom/resolve/main/onnx/model_quantized.onnx";
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const t0 = performance.now();
+    const r = await fetch(url, {
+      method: "GET",
+      headers: { Range: "bytes=0-1048576" },   // 先拉 1MB 测速
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    if (!r.ok && r.status !== 206) return { ok: false, why: `模型文件返回 HTTP ${r.status}` };
+    const buf = await r.arrayBuffer();
+    const sec = (performance.now() - t0) / 1000;
+    const bytesPerSec = buf.byteLength / sec;
+    const totalMB = 103;
+    const estSec = Math.round((totalMB * 1024 * 1024) / bytesPerSec);
+    const est = estSec > 90 ? `约 ${Math.ceil(estSec / 60)} 分钟` : `约 ${estSec} 秒`;
+    onTip && onTip(est, Math.round(bytesPerSec / 1024));
+    return { ok: true, est, kbps: Math.round(bytesPerSec / 1024) };
+  } catch (e) {
+    return { ok: false, why: "模型文件连不上（网络被墙或 GitHub Pages 不可达）" };
+  }
+}
 
 /* 加载引擎 + 模型（首次约 100MB，之后走浏览器缓存） */
 async function loadAIGC(onProgress) {
@@ -24,36 +63,47 @@ async function loadAIGC(onProgress) {
   AIGC.loading = true;
 
   try {
-    // transformers.js v2 是 ESM，普通 <script> 里用 new Function + import() 动态加载
-    const mod = await (new Function("u", "return import(u)"))(AIGC.esmUrl);
-    const { pipeline, env } = mod;
+  const errorList = [];
+  // 逐个尝试引擎源：自托管优先，失败自动回退公共 CDN
+  const esmSources = [AIGC.esmUrl, ...AIGC.esmFallback];
+  for (const esmUrl of esmSources) {
+    try {
+      // transformers.js v2 是 ESM，普通 <script> 里用 new Function + import() 动态加载
+      const mod = await (new Function("u", "return import(u)"))(esmUrl);
+      const { pipeline, env } = mod;
 
-    env.allowLocalModels = false;
-    env.useBrowserCache = true;
-    // 关键：把所有模型文件请求重定向到我们自己的服务器，绕开 HuggingFace（这台机器不可达）
-    env.remoteHost = AIGC.modelBase;
-    env.remotePathTemplate = "{model}/resolve/{revision}/";
-    // ONNX 运行时 wasm 仍走 jsDelivr CDN（可达）
-    env.backends.onnx.wasm.wasmPaths = AIGC.libBase + "/dist/";
+      env.allowLocalModels = false;
+      env.useBrowserCache = true;      // 已下载的模型走缓存，二次打开秒开
+      // 关键：把所有模型文件请求重定向到我们自己的服务器，绕开 HuggingFace（本机不可达）
+      env.remoteHost = AIGC.modelBase;
+      env.remotePathTemplate = "{model}/resolve/{revision}/";
+      // 【修正】wasm 就在 vendor/tfjs/ 根目录，不要再拼 dist/（拼了会 404 → 检测起不来）
+      env.backends.onnx.wasm.wasmPaths = AIGC.libBase;
 
-    AIGC.pipeline = await pipeline("text-classification", "custom", {
-      quantized: true,
-      progress_callback: (p) => {
-        if (p.status === "progress" && p.total) {
-          onProgress && onProgress(Math.round((p.loaded / p.total) * 100), p.file || "");
-        } else if (p.status === "ready") {
-          onProgress && onProgress(100, "就绪");
-        }
-      },
-    });
-    AIGC.loaded = true;
-    return true;
-  } catch (e) {
-    console.error("AIGC 加载失败", e);
-    onProgress && onProgress(-1, e.message || String(e));
-    throw e;
+      AIGC.pipeline = await pipeline("text-classification", "custom", {
+        quantized: true,
+        progress_callback: (p) => {
+          if (p.status === "progress" && p.total) {
+            onProgress && onProgress(Math.round((p.loaded / p.total) * 100), p.file || "");
+          } else if (p.status === "ready") {
+            onProgress && onProgress(100, "就绪");
+          }
+        },
+      });
+      AIGC.srcName = esmUrl.includes("github.io") ? "自托管(GitHub Pages)" : "公共CDN";
+      AIGC.loaded = true;
+      return true;
+    } catch (e) {
+      console.error("AIGC 加载失败（源：" + esmUrl + "）", e);
+      errorList.push(`${esmUrl.includes("github.io") ? "自托管" : "CDN"}：${e.message || e}`);
+      // 换下一个源继续试
+    }
+  }
+  const err = new Error("所有引擎源都加载失败。\n" + errorList.join("\n"));
+  onProgress && onProgress(-1, err.message);
+  throw err;
   } finally {
-    AIGC.loading = false;
+    AIGC.loading = false;   // 失败也必须复位，否则下次永远卡在"加载中"
   }
 }
 

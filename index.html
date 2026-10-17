@@ -125,6 +125,13 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .tag.pt i{width:6px;height:6px;border-radius:50%;margin-right:5px;flex-shrink:0}
 .tag.rd{background:var(--red-50);border-color:#fecaca;color:#b91c1c}
 .rd-n{color:var(--red);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* 热度值≠阅读量：用灰字 + 弱化，避免被误读成真实阅读数 */
+.rd-h{color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:11.5px}
+.tag.rep{cursor:help}
+.chip.repfirst{background:#dcfce7;border-color:#16a34a3d;color:#15803d}
+.chip.repfirst.on{background:#16a34a;border-color:#16a34a;color:#fff}
+.rep-hint{margin:0 0 12px;padding:11px 14px;background:#f0fdf4;border:1px solid #86efac33;border-left:3px solid #16a34a;border-radius:8px;font-size:13px;line-height:1.7;color:#14532d}
+.rep-hint b{color:#15803d}
 .aim{margin-left:auto;font-size:12px;color:var(--ink-3);display:flex;
   align-items:center;gap:5px;flex-shrink:0;white-space:nowrap}
 .aim svg{opacity:.5;flex-shrink:0}
@@ -838,8 +845,10 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     <div class="filters">
       <span class="fl">分类</span>
       <div id="fCat" style="display:contents"></div>
-      <button class="chip realfirst" id="fReal" style="margin-left:auto">只看真实阅读量</button>
+      <button class="chip realfirst" id="fReal">只看真实阅读量</button>
+      <button class="chip repfirst" id="fRep" title="只留「内容驱动型」爆文：赢在选题和结构，普通账号重写依然有机会。跳过那些靠大号粉丝基数和时效堆出来的热文。">新手可抄</button>
     </div>
+    <div id="repHint"></div>
 
     <div class="lst" id="list"></div>
   </div>
@@ -1052,14 +1061,23 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
                  style="display:none;margin-top:6px;width:100%;padding:8px 11px;
                  border:1px solid var(--line);border-radius:7px;font-size:13px">
         </div>
-        <div class="fld">
-          <label>去 AI 味强度</label>
-          <select id="rwHuman">
-            <option value="mid" selected>中（自然口语）</option>
-            <option value="strong">强（重度口语化）</option>
-            <option value="light">轻（仅微调）</option>
-          </select>
-        </div>
+      <div class="fld">
+        <label>语气人设</label>
+        <select id="rwHuman">
+          <option value="mid" selected>中（自然口语）</option>
+          <option value="strong">强（重度口语化）</option>
+          <option value="light">轻（仅微调）</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>我的账号阶段<span class="lq">决定仿写"降维到什么程度"</span></label>
+        <select id="rwStage">
+          <option value="new">起步号（粉丝 &lt;1000）</option>
+          <option value="grow" selected>成长号（1000~1万）</option>
+          <option value="mature">成熟号（1万+）</option>
+        </select>
+        <div class="hint" id="rwStageInfo">成长号：可以有观点，但切口要具体</div>
+      </div>
       </div>
       <div class="fld">
         <label>参考原文（可选，粘进来仿写更贴题，也能按它的字数仿写）</label>
@@ -1415,7 +1433,7 @@ function fixCovers(list) {
   return list;
 }
 let DATA = { articles: [], updatedAt: "", source: "" };
-let FILT = { plat: "全部", cat: "全部", real: false, q: "" };
+let FILT = { plat: "全部", cat: "全部", real: false, repEasy: false, q: "" };
 let CUR = null;
 let RWTEXT = "";
 let MYLIST = [];
@@ -1464,6 +1482,73 @@ function fmtReads(n) {
   return n.toLocaleString();
 }
 
+/* ═══════ 可复刻度：这篇爆文，普通创作者抄得动吗？ ═══════
+   痛点：热榜置顶清一色 10w+，但它们大多是「势能型爆文」——
+   靠大号几十万粉丝底子 + 抢时效，中小号照着写也拿不到同等数据。
+   真正该对标的是「内容驱动型」：赢在选题/结构/共鸣，换个号重做依然成立。
+   这里用标题+摘要做纯本地判定（不发请求、不烧 token），把候选分成三档。      */
+
+// A. 势能依赖型信号：播报事实/名人动态/突发热点，热度来自账号体量与时效，不是写法
+const HYPE_NEWS = ["官宣","曝光","回应","发文","声明","塌房","恋情","分手","结婚","离婚","二胎","三胎",
+  "车祸","身亡","逝世","去世","通报","突发","紧急","实锤","热搜","炸了","破防","翻车","道歉","被抓",
+  "被查","落马","判决","宣判","获刑","确诊","遇难","失联","爆雷","跑路","被曝","疑似","刚刚","最新消息",
+  "拿下","夺冠","击败","战胜","晋级","签约","代言","开业","首秀","开播","定档","杀青",
+  // 事件/事故类动词：标题在"播报一件已发生的事"，热度来自事件本身而非写法
+  "溺亡","坠亡","坠楼","走失","获救","救人","去世","离世","病逝","牺牲","自尽","遭驳","索赔",
+  "被罚","被判","被捕","落水","起火","爆炸","坍塌","泄漏","召回","下架","封禁","约谈","整改"];
+// B. 内容驱动型信号：给出方法/清单/判断/亲历，赢在内容本身，谁写都可能有量
+const VALUE_SIG = ["如何","怎么","怎样","为什么","几个","几招","几条","个方法","种方法","技巧","方法","攻略",
+  "建议","亲测","实测","踩坑","避坑","经验","心得","分享","总结","复盘","清单","指南","教程","步骤","流程",
+  "最全","合集","盘点","对比","区别","真相","原因","揭秘","被忽略","我发现","终于明白","后悔","别再","不要再",
+  "注意","提醒","警惕","看完","学会","掌握","提升","入门","进阶","套路","逻辑","底层","的本质","深度","解读",
+  "故事","经历","亲身","自述","我是怎么","这样做","这样做才","招","绝了","原来"];
+// C. 人称主语：新闻里高频出现，单独看不构成"内容价值"
+const PERSON_SIG = ["男子","女子","女童","男童","老人","司机","村民","学生","教师","医生","大爷","大妈",
+  "小伙","女孩","男孩","民警","辅警","外卖员","骑手","乘客","游客","顾客"];
+// D. 强共鸣/情绪型：靠情绪共振起量，小号也能写（算内容驱动，权重略低）
+//    注：早先这里放过泛词"岁"，结果"59岁演员溺亡"这种纯新闻被误判成可复制，已移除。
+const EMOTION_SIG = ["中年","焦虑","内耗","孤独","emo","哭","破防了","扎心","成年","爸妈","父母",
+  "孩子","婚姻","生活不易","打工人","北漂","沪漂","裸辞","转行","失业"];
+
+/* 返回 { level, label, tip, score }
+   level: easy(内容驱动，可复制) / mid(参半) / hard(势能依赖，慎对标) */
+function replicability(a) {
+  const t = (a.title || "") + " " + (a.desc || "");
+  let hype = 0, val = 0;
+  for (const k of HYPE_NEWS) if (t.includes(k)) hype++;
+  for (const k of VALUE_SIG) if (t.includes(k)) val++;
+  for (const k of EMOTION_SIG) if (t.includes(k)) val += 0.5;
+  for (const k of PERSON_SIG) if (t.includes(k)) hype += 0.6;   // 人称主语多半是在讲新闻，不是讲方法
+
+  // 标题是问句/祈使句 → 内容驱动倾向更强
+  if (/[？?]$/.test((a.title || "").trim())) val += 1;
+  if (/^[0-9０-９]/.test((a.title || "").trim())) val += 0.8;   // 数字开头多为清单体
+
+  const reads = a.readCount || 0;
+  // 10w+ 里有一部分是纯靠粉丝基数顶起来的，扣一点可信复制性
+  if (a.hasRealRead && reads >= 100000) hype += 0.8;
+
+  const s = val - hype;
+  if (s >= 1.2) return { level: "easy", label: "可复制", score: s,
+    tip: "赢在选题和结构，换个号重写依然成立 —— 适合直接对标" };
+  if (s <= -0.8) return { level: "hard", label: "靠势能", score: s,
+    tip: "热度主要来自原账号粉丝体量和时效，中小号照写很难复现同等数据" };
+  return { level: "mid", label: "半靠内容", score: s,
+    tip: "内容与时势各占一半，可借鉴切入角度，别照搬结论" };
+}
+
+/* 把内容物件按「普通创作者够不够得着」给出对标标注 */
+function repBadge(a) {
+  const r = replicability(a);
+  const map = {
+    easy: { c: "#15803d", bg: "#dcfce7", i: "🌱" },
+    mid:  { c: "#b45309", bg: "#fef3c7", i: "📈" },
+    hard: { c: "#b91c1c", bg: "#fee2e2", i: "🏆" },
+  };
+  const m = map[r.level];
+  return `<span class="tag rep" title="${esc(r.tip)}" style="color:${m.c};border-color:${m.c}3d;background:${m.bg}">${m.i} ${r.label}</span>`;
+}
+
 /* ═══════════ 加载数据 ═══════════ */
 async function loadData() {
   try {
@@ -1507,6 +1592,22 @@ function renderFilters() {
   $$("#fCat .chip").forEach(b => b.onclick = () => { FILT.cat = b.dataset.c; renderFilters(); renderList(); });
   $("#fReal").onclick = () => { FILT.real = !FILT.real; renderFilters(); renderList(); };
   $("#fReal").classList.toggle("on", FILT.real);
+  const rb = $("#fRep");
+  if (rb) {
+    rb.onclick = () => { FILT.repEasy = !FILT.repEasy; renderFilters(); renderList(); renderRepHint(); };
+    rb.classList.toggle("on", FILT.repEasy);
+  }
+}
+
+/* 「新手可抄」开启时，在列表顶部解释一次这模式的含义，免得用户不知道在看什么 */
+function renderRepHint() {
+  const box = $("#repHint");
+  if (!box) return;
+  const on = FILT.repEasy;
+  const n = sortedList(filtered()).length;
+  box.innerHTML = on ? `<div class="rep-hint">
+      <b>新手可抄</b>：只留内容和结构本身能打的爆文，跳过靠大号粉丝基数、明星时效、突发热点堆出来的热文 —— 那类换个小号写就没人看。当前 <b>${n}</b> 篇。
+    </div>` : "";
 }
 
 function filtered() {
@@ -1515,6 +1616,7 @@ function filtered() {
     if (FILT.plat !== "全部" && a.platform !== FILT.plat) return false;
     if (FILT.cat !== "全部" && a.category !== FILT.cat) return false;
     if (FILT.real && !a.hasRealRead) return false;
+    if (FILT.repEasy && replicability(a).level === "hard") return false;   // 新手可抄：剔除靠势能的
     if (q) {
       // 搜标题 / 平台 / 分类 / 榜单 / 公众号名（若数据带 account）
       const hay = [a.title, a.platform, a.category, a.board, a.account]
@@ -1545,8 +1647,41 @@ function emptyHint() {
     <button class="btn btn-p" id="emptyFix" data-drop="${ok[1]}" style="margin-top:14px">${esc(ok[0])} · ${ok[2]} 篇</button></div>`;
 }
 
+/* ═══ 数据口径：不同平台的"数"不是一回事，不能混着比大小 ═══
+   - hasRealRead=true：公众号真实阅读量（可跨篇比较，但超过 10 万只显示到 10 万+）
+   - 其余全是平台自己的热度值：知乎热度、微博热搜指数、GitHub star…单位和算法都不同，
+     拿它们跟"阅读量"排一起比大小是错的（比如快手某条写着"1000.0万"，其实是热度值）。
+   所以这里分两组各自排：真实阅读组按阅读数；热度组按「榜单内名次」，不跨榜比数值。 */
+const sortKey = a => [
+  a.hasRealRead ? 0 : 1,                       // 1) 真实数据优先
+  a.hasRealRead ? -(a.readCount || 0) : 0,      // 2) 真实组：按真实阅读降序
+  a.hasRealRead ? 0 : (a.rank || 999),          // 3) 热度组：按榜单内名次升序（跨榜不比数）
+];
+function sortedList(arr) {
+  // 「新手可抄」模式：内容驱动度高的排前面，而不是谁数字大谁排前面
+  if (FILT.repEasy) {
+    return [...arr].sort((x, y) => replicability(y).score - replicability(x).score
+      || (x.hasRealRead ? 0 : 1) - (y.hasRealRead ? 0 : 1));
+  }
+  return [...arr].sort((x, y) => {
+    const A = sortKey(x), B = sortKey(y);
+    return A[0] - B[0] || A[1] - B[1] || A[2] - B[2];
+  });
+}
+
+/* 把"这个数到底是什么"讲清楚，别让用户误读成阅读量 */
+function readTag(a) {
+  if (a.hasRealRead) {
+    const capped = (a.readCount || 0) >= 100000;
+    return `<span class="rd-n" title="${capped ? "公众号真实阅读量已到显示上限 10 万+（微信不再展示更高数字）" : "公众号真实阅读量，来源 tophub 抓取"}">${esc(a.readCountText)} 阅读${capped ? "+" : ""}</span>`;
+  }
+  const t = (a.readCountText || "").trim();
+  if (!t || t === "—") return `<span class="rd-h">热度未知</span>`;
+  return `<span class="rd-h" title="这是 ${esc(a.platform)} 自己的热度值/指数（${esc(a.board)}），不是阅读量。不同平台算法不同，不能与其他平台横向比较。">热度 ${esc(t)}</span>`;
+}
+
 function renderList() {
-  const arr = filtered();
+  const arr = sortedList(filtered());
   if (!arr.length) {
     $("#list").innerHTML = emptyHint();
     const btn = $("#emptyFix");
@@ -1583,8 +1718,8 @@ function renderList() {
         <div class="mt">
           ${platTag(a.platform)}
           <span class="tag">${esc(a.category)}</span>
-          ${a.hasRealRead ? `<span class="rd-n">${esc(a.readCountText)} 阅读</span>`
-                          : `<span>${esc(a.readCountText || "—")}</span>`}
+          ${repBadge(a)}
+          ${readTag(a)}
         </div>
       </div>
       <div class="aim">AI 仿写
@@ -1763,6 +1898,34 @@ function stopBusy(btn, label) {
   if (label) btn.textContent = label;
 }
 
+/* ═══ 账号阶段 → 仿写降维策略 ═══
+   痛点根源：热榜里躺着一堆 10w+，但它们大多是资源型账号（有团队、有粉丝基数、
+   有信息源）写出来的。让它照着写，出来的东西就是一个小号在模仿大号的口吻——
+   读者一眼就觉得"你不配说这话"。所以这里按账号阶段把对标尺度降下来。 */
+const STAGE_MAP = {
+  new: `【降维·起步号（粉丝不到 1000）】
+原文很可能是个大号写的。你要把它**降维重写成一个具体的人的真实表达**，而不是模仿大号的口气：
+- 切口必须更小更具体：别写"当代年轻人如何XXX"，写"我上周XXX的真实经历"
+- 视角换成第一人称亲历/身边观察，靠真实感和细节取胜，不靠权威感
+- 删掉需要身份背书的内容：行业大局观、内部数据、专家引述、"据我所知/从业十年"这类口吻一律别用
+- 不要宏大开场和宽泛结论，把话题收窄到一个读者能代入的具体场景
+- 标题别过度承诺（不用"震惊/必看/终极"这类），用具体悬念或真实疑问`,
+  grow: `【降维·成长号（粉丝 1000~1万）】
+比原文收窄一档写：
+- 可以输出观点，但观点必须建立在你给出的具体事例上，不能凭空下大判断
+- 切口选"一个具体问题怎么解决"，而不是"整个行业会怎样"
+- 可以有一点人设感（个人偏好、立场），但别端着教训人
+- 例证用你自己的经历、读者留言、身边案例这类够得着的素材，别引用大号才有的一手资源`,
+  mature: `【对标·成熟号（粉丝 1万+）】
+- 可以保留原文的结构张力与观点强度
+- 允许有一定行业视角和判断，但仍要给出支撑，别写成空泛的结论堆砌`,
+};
+const STAGE_INFO = {
+  new: "起步号：切成第一人称亲历的小切口，不模仿大号口吻",
+  grow: "成长号：可以有观点，但切口要具体",
+  mature: "成熟号：可保留原文的结构张力与观点强度",
+};
+
 async function doRewrite(regen) {
   if (!CUR) return;
   const btn = regen ? $("#btnRwRe") : $("#btnRw");
@@ -1804,13 +1967,30 @@ ${CUR.title}
 - 结尾给一句让人想转发的金句或反问
 保持该话题应有的情绪基调，不要泛泛而谈。`;
 
+  // 这篇原文到底靠什么起的量？先讲清楚，别让用户对小号抱不切实际的预期
+  const rp = typeof replicability === "function" ? replicability(CUR) : null;
+  const honest = rp ? `
+【先看清楚对标对象（重要）】
+这篇参考的热度，机器判定为「${rp.label}」：${rp.tip}
+所以仿写时${rp.level === "hard"
+    ? "只提取它的**选题切口和结构**，不要指望复现它的流量——它的量来自原账号势能和时效，不是写法本身。"
+    : rp.level === "mid"
+      ? "借鉴它的切入角度和节奏，结论和素材要换成自己的。"
+      : "它赢在内容本身，结构和选题都可以放心对标，把例证换成你的即可。"}
+写完后用一句话告诉用户：这篇原文主要靠什么起来的、以及他这个量级的号写同类内容，合理的预期是什么。` : "";
+
   const selfCheck = `
 【最后自检（写完后通读一遍再交付）】
-标出任何读起来像 AI 生成的句子并改写：空泛铺垫（"随着…的发展""众所周知""近年来"）、排比升华、滥用"赋能/闭环/打造/一站式/颠覆/抓手"、假对比"不只是…更是…"、客服腔"好问题！"。确保开头不套公式、每段不整齐对称、不总结式收尾。改到像真人随手写。`;
+标出任何读起来像 AI 生成的句子并改写：空泛铺垫（"随着…的发展""众所周知""近年来"）、排比升华、滥用"赋能/闭环/打造/一站式/颠覆/抓手"、假对比"不只是…更是…"、客服腔"好问题！"。确保开头不套公式、每段不整齐对称、不总结式收尾。改到像真人随手写。
+另外自查一遍：文章里有没有出现"我这个体量的号不该说的话"（比如没有经历支撑的大判断、需要权威身份才立得住的口吻、装作掌握内部信息的表述）。有就改掉。`;
 
   const prompt = `你是一位资深公众号编辑。现在要仿写一篇参考文章。
 
 ${refBlock}
+${honest}
+
+【产出控制在什么段位】
+${STAGE_MAP[$("#rwStage").value] || STAGE_MAP.grow}
 
 【你的任务】
 ${style}
@@ -2156,6 +2336,13 @@ function syncLenUI() {
 }
 $("#rwLen").onchange = syncLenUI;
 $("#rwSrc").oninput = syncLenUI;
+$("#rwStage").onchange = syncStageUI;
+function syncStageUI() {
+  const v = $("#rwStage").value;
+  const el = $("#rwStageInfo");
+  if (el) el.textContent = STAGE_INFO[v] || "";
+}
+syncStageUI();
 function downloadMd() { dl("仿写稿.md", rwMdWithImages(), "text/markdown"); }
 
 $("#btnHumanize").onclick = humanizePass;
@@ -2265,8 +2452,20 @@ $("#btnDet").onclick = async () => {
 
   try {
     if (!AIGC.loaded) {
+      btn._stage("测速中");
+      $("#detOut").innerHTML = `<div class="note info">正在连接模型文件…</div>`;
+      // 先拉 1MB 测速：103MB 的模型在慢网要几分钟，
+      // 不提前说清楚，用户会以为卡死而关掉页面，这次下载就白费了。
+      const probe = await probeAIGCModel();
+      if (!probe.ok) {
+        $("#detOut").innerHTML = `<div class="note"><b>连不上检测模型</b><br>${esc(probe.why)}
+          <br><br>模型托管在 GitHub Pages 上，国内访问有时会抽风。可以先刷新重试一次；
+          检测全程在你浏览器本地跑，稿子不会上传。</div>`;
+        return;
+      }
       btn._stage("下载模型");
-      $("#detOut").innerHTML = `<div class="note info">正在下载检测模型（约 98MB，首次较慢；之后走浏览器缓存就很快了）</div>`;
+      $("#detOut").innerHTML = `<div class="note info">首次需下载 103MB 模型，当前网速 ${probe.kbps} KB/s，预计 <b>${esc(probe.est)}</b>。
+        <br>别关页面，下完这次就缓存在本地了，以后秒开。</div>`;
       await loadAIGC((p, file) => {
         if (p < 0) { $("#detOut").innerHTML = `<div class="note"><b>模型加载失败</b><br>${esc(file)}</div>`; return; }
         $("#detOut").innerHTML = `<div class="note info">正在加载检测模型… ${p}%${file ? `（${esc(file)}）` : ""}</div>`;
