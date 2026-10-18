@@ -127,6 +127,23 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
 .rd-n{color:var(--red);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
 /* 热度值≠阅读量：用灰字 + 弱化，避免被误读成真实阅读数 */
 .rd-h{color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums;font-size:11.5px}
+/* 卡片内容预览：一行摘要，帮新手 1 秒判断值不值得点（无简介则不渲染） */
+.ds{font-size:12.5px;line-height:1.55;color:var(--ink-2);margin-bottom:8px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 抽屉里的原文摘要块 */
+.d-sum{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:12px 14px;margin-bottom:16px;font-size:13.5px;line-height:1.75;color:var(--ink)}
+.d-sum .ds-k{font-size:11.5px;font-weight:600;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.d-sum .ds-note{font-size:12px;color:var(--ink-3);line-height:1.7}
+/* 首次使用引导条 */
+.nb-hint{display:flex;align-items:flex-start;gap:10px;background:linear-gradient(135deg,#eff6ff,#f5f3ff);
+  border:1px solid #dbeafe;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.6;color:var(--ink)}
+.nb-hint .nb-ic{font-size:16px;line-height:1.2;flex-shrink:0}
+.nb-hint b{color:var(--blue)}
+.nb-hint .nb-x{flex-shrink:0;margin-left:auto;color:var(--ink-3);cursor:pointer;font-size:16px;line-height:1;padding:0 2px}
+.nb-hint ol{margin:4px 0 0;padding-left:18px}
+.nb-hint li{margin-bottom:3px}
+.nb-hint li+li{margin-top:2px}
 .tag.rep{cursor:help}
 .chip.repfirst{background:#dcfce7;border-color:#16a34a3d;color:#15803d}
 .chip.repfirst.on{background:#16a34a;border-color:#16a34a;color:#fff}
@@ -810,7 +827,7 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
     <div class="hd-r">
       <span class="src" id="srcInfo">数据源 —</span>
       <button class="btn btn-g btn-sm" id="btnSync" title="与电脑同步（按需连接）">⇄<span class="bt"> 同步</span></button>
-      <button class="btn btn-g btn-sm" id="btnRefresh" title="重新采集最新热榜，按时间从新到旧排序">↻<span class="bt"> 手动刷新</span></button>
+      <button class="btn btn-g btn-sm" id="btnRefresh" title="拉取服务端已采集的最新热榜（约每小时自动更新，也可手动拉取）">↻<span class="bt"> 手动刷新</span></button>
       <button class="btn btn-p btn-sm" id="btnAssistant">AI<span class="bt"> 助手</span></button>
     </div>
   </div>
@@ -821,8 +838,20 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   <!-- ═══ 热榜页 ═══ -->
   <div class="page on" id="pg-board">
     <div class="upd" id="updInfo"></div>
+    <div class="nb-hint" id="nbHint" style="display:none">
+      <span class="nb-ic">👋</span>
+      <div>
+        <b>第一次用？三步上手：</b>
+        <ol>
+          <li>想找「小号也写得动」的选题？点右侧 <b>新手可抄</b>，自动跳过靠大号粉丝堆出来的 10w+。</li>
+          <li>点任意文章 → 进「AI 仿写」，选好<b>账号阶段</b>就能按你的体量改写，<b>不用配任何密钥</b>。</li>
+          <li>摘要里提示「无原文」？把文章正文粘进「参考原文」，仿写更贴题。</li>
+        </ol>
+      </div>
+      <span class="nb-x" id="nbClose" title="不再显示">×</span>
+    </div>
     <div class="src-note">
-      全部文章<b>真实抓取</b>自公开热榜，微信板块带<b>真实阅读量</b>（精确到个位），数据每日自动更新。点击任意文章即可进入 AI 仿写工作台。
+      全部文章<b>真实抓取</b>自公开热榜，微信板块带<b>真实阅读量</b>（精确到个位），数据约每小时自动更新。点击任意文章即可进入 AI 仿写工作台。
     </div>
 
     <div class="stats">
@@ -1025,6 +1054,8 @@ nav button.on{background:var(--blue-50);color:var(--blue)}
   </div>
   <div class="dw-b">
     <div class="meta-bar" id="dMeta"></div>
+
+    <div id="dSummary"></div>
 
     <div class="tabs">
       <button class="on" data-tp="rw">AI 仿写</button>
@@ -1715,6 +1746,7 @@ function renderList() {
       })()}
       <div class="bd">
         <div class="tt">${esc(a.title)}</div>
+        ${a.desc ? `<div class="ds">${esc(a.desc)}</div>` : ""}
         <div class="mt">
           ${platTag(a.platform)}
           <span class="tag">${esc(a.category)}</span>
@@ -1801,6 +1833,11 @@ function openDrawer(a) {
     </div>`;
   }
   srcBox.innerHTML = html;
+  // 原文摘要：热榜只提供标题，半数有榜单简介（非全文）。有就显示，没有给诚实提示，避免新手盲仿
+  const ds = (a.desc || "").trim();
+  $("#dSummary").innerHTML = ds
+    ? `<div class="d-sum"><div class="ds-k">📝 热榜摘要<span style="font-weight:400;color:var(--ink-3)">（榜单提供的简介，非全文）</span></div>${esc(ds)}</div>`
+    : `<div class="d-sum"><div class="ds-note">⚠️ 这条热榜没有附带摘要。点下方「原文」标签里的链接看真实内容，再回到「AI 仿写」把正文粘进「参考原文」，仿出来会更贴题、不像硬套。</div></div>`;
   $("#srcMeta").textContent = (originDomain || "—");
   $("#imPrompt").value = "";
   $("#detOut").innerHTML = "";
@@ -3903,7 +3940,7 @@ $("#btnRefresh").onclick = async () => {
     $("#srcInfo").innerHTML = __src2;
     const __upd2 = $("#updInfo"); if (__upd2) __upd2.innerHTML = __src2;
     asMsg("sys", `✓ 已载入最新热榜：${merged.length} 篇（${real} 篇真实阅读量）。
-数据每 2 小时自动更新一次。`);
+数据约每小时自动更新一次。`);
   } catch (e) {
     // ② 降级：重新拉本地缓存（说明真实情况）
     try {
@@ -4125,6 +4162,18 @@ $("#btnSync").onclick = () => {
 };
 $("#btnSyncPush").onclick = syncPush;
 $("#btnSyncPull").onclick = syncPull;
+
+/* ═══════════ 首次使用引导（只看一次） ═══════════ */
+(function initNewbieHint() {
+  const KEY = "wxhot_nb_seen";
+  try { if (localStorage.getItem(KEY)) return; } catch (e) {}
+  const box = $("#nbHint"); if (!box) return;
+  box.style.display = "flex";
+  const hide = () => { box.style.display = "none"; try { localStorage.setItem(KEY, "1"); } catch (e) {} };
+  $("#nbClose").onclick = hide;
+  // 用户一旦点「新手可抄」就视为已学会，关闭引导
+  const rb = $("#fRep"); if (rb) rb.addEventListener("click", () => { setTimeout(hide, 400); });
+})();
 </script>
 
 <!-- 公众号排版弹窗 -->
