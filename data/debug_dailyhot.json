@@ -1,5 +1,5 @@
 {
- "at": "2026-10-19 20:57:03",
+ "at": "2026-10-19 22:33:30",
  "added": 0,
  "diag": [
   {
@@ -12,7 +12,7 @@
    "route": "ithome",
    "plat": "IT之家",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "ifanr",
