@@ -1,5 +1,5 @@
 {
- "at": "2026-11-02 06:31:47",
+ "at": "2026-11-02 11:50:55",
  "added": 0,
  "diag": [
   {
@@ -30,7 +30,7 @@
    "route": "v2ex",
    "plat": "V2EX",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "ngabbs",
