@@ -1,5 +1,5 @@
 {
- "at": "2026-11-12 03:59:42",
+ "at": "2026-11-12 04:47:57",
  "added": 0,
  "diag": [
   {
@@ -18,7 +18,7 @@
    "route": "ifanr",
    "plat": "爱范儿",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "coolapk",
@@ -48,7 +48,7 @@
    "route": "netease-news",
    "plat": "网易新闻",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "sina-news",
@@ -66,7 +66,7 @@
    "route": "douban-group",
    "plat": "豆瓣小组",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "csdn",
