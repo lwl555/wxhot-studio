@@ -1,5 +1,5 @@
 {
- "at": "2026-11-27 09:18:05",
+ "at": "2026-11-27 12:51:38",
  "added": 0,
  "diag": [
   {
@@ -48,7 +48,7 @@
    "route": "netease-news",
    "plat": "网易新闻",
    "ok": false,
-   "err": "URLError: <urlopen error [Errno -2] Name or service not known>"
+   "err": "URLError: <urlopen error [Errno -5] No address associated with hostname>"
   },
   {
    "route": "sina-news",
